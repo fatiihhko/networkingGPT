@@ -50,6 +50,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
       body: {
         token: inviteToken,
         sendEmail,
+        base_url: window.location.origin,
         contact: {
           first_name: values.first_name,
           last_name: values.last_name,
@@ -73,7 +74,18 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
 
     toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
     onSuccess?.(data?.contact ?? null, values);
-    form.reset({ relationship_degree: 5 });
+    form.reset({
+      first_name: "",
+      last_name: "",
+      city: "",
+      profession: "",
+      relationship_degree: 5,
+      services: "",
+      tags: "",
+      phone: "",
+      email: "",
+      description: "",
+    });
     setSendEmail(false);
     return;
   }

@@ -11,6 +11,8 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 interface Payload {
   name?: string;
   email: string;
+  token?: string;
+  base_url?: string;
 }
 
 serve(async (req: Request) => {
@@ -19,7 +21,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { name, email }: Payload = await req.json();
+    const { name, email, token, base_url }: Payload = await req.json();
     if (!email) {
       return new Response(JSON.stringify({ error: "email gerekli" }), {
         status: 400,
@@ -27,9 +29,12 @@ serve(async (req: Request) => {
       });
     }
 
+    const inviteLink = token ? `${(base_url || '').replace(/\/$/, '')}/invite/${token}` : null;
+
     const html = `
       <h2>Network GPT'ye hoş geldiniz${name ? ", " + name : ""}!</h2>
       <p>Ağınıza eklendiğiniz için teşekkürler. Sorunuz olursa bu e-postaya yanıt verebilirsiniz.</p>
+      ${inviteLink ? `<p>Başkalarını eklemek için davet bağlantısı: <a href="${inviteLink}">${inviteLink}</a></p>` : ''}
     `;
 
     const result = await resend.emails.send({

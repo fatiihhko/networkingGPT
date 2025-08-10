@@ -17,6 +17,7 @@ const resend = new Resend(resendApiKey);
 interface SubmitBody {
   token: string;
   sendEmail?: boolean;
+  base_url?: string;
   contact: {
     first_name: string;
     last_name: string;
@@ -39,7 +40,7 @@ serve(async (req: Request) => {
 
   try {
     const body: SubmitBody = await req.json();
-    const { token, contact, sendEmail } = body || {};
+    const { token, contact, sendEmail, base_url } = body || {};
 
     if (!token || !contact) {
       return new Response(JSON.stringify({ error: "token ve contact gerekli" }), {
@@ -113,6 +114,7 @@ serve(async (req: Request) => {
     // Optional email
     if (sendEmail && contact.email) {
       try {
+        const inviteLink = `${(base_url || '').replace(/\/$/, '')}/invite/${token}`;
         await resend.emails.send({
           from: "Lovable <onboarding@resend.dev>",
           to: [contact.email],
@@ -120,6 +122,8 @@ serve(async (req: Request) => {
           html: `
             <h2>Network GPT'ye hoş geldiniz${contact.first_name ? ", " + contact.first_name : ""}!</h2>
             <p>Ağınıza eklendiğiniz için teşekkürler. Sorunuz olursa bu e-postaya yanıt verebilirsiniz.</p>
+            <p>Başkalarını eklemek için bu davet bağlantısını kullanabilirsiniz:</p>
+            <p><a href="${inviteLink}">${inviteLink}</a></p>
           `,
         });
       } catch (mailErr) {
