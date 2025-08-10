@@ -79,7 +79,7 @@ export const NetworkFlow = () => {
     const adminPos = positions.get("admin") || { x: 0, y: 0 };
     const adminNode = {
       id: "admin",
-      data: { label: "Admin" },
+      data: { label: "Rook Tech" },
       position: { x: adminPos.x + offsetX, y: adminPos.y + offsetY },
       style: { background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderRadius: 9999, padding: 20 },
     } as any;
@@ -94,7 +94,7 @@ export const NetworkFlow = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex flex-col items-center text-center">
-                  <div className="font-medium text-sm md:text-base">{c.first_name} {c.last_name}</div>
+                  <div className="font-medium text-sm md:text-base text-foreground">{c.first_name} {c.last_name}</div>
                   <div className="text-xs text-muted-foreground">{c.profession || "-"}</div>
                   {kategori && (
                     <span className="mt-1 inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] md:text-xs text-secondary-foreground">
