@@ -114,7 +114,7 @@ export const NetworkFlow = () => {
           )
         },
         position: { x: p.x + offsetX, y: p.y + offsetY },
-        style: { padding: 8 },
+        style: { padding: 8, color: 'hsl(var(--foreground))' },
       } as any;
     });
 
