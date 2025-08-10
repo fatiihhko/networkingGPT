@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Users, MapPin, Briefcase, Gauge } from "lucide-react";
+import { normalizeCityForProvince } from "@/utils/distance";
 
 interface Row { id: string; city: string | null; profession: string | null; relationship_degree: number }
 
@@ -28,7 +29,7 @@ export const StatsBar = () => {
   }, []);
 
   const total = rows.length;
-  const cityCount = new Set(rows.map(r => r.city?.trim().toLowerCase()).filter(Boolean) as string[]).size;
+  const cityCount = new Set(rows.map(r => normalizeCityForProvince(r.city)).filter(Boolean) as string[]).size;
   const professionCount = new Set(rows.map(r => r.profession?.trim().toLowerCase()).filter(Boolean) as string[]).size;
   const avg = total ? (rows.reduce((a, b) => a + (b.relationship_degree || 0), 0) / total).toFixed(1) : "0.0";
 

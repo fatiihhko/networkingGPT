@@ -103,6 +103,14 @@ function toKey(city: string) {
     .replace(/ç/g, 'c');
 }
 
+export function normalizeCityForProvince(cityRaw: string | null | undefined): string | null {
+  if (!cityRaw) return null;
+  const rawKey = toKey(cityRaw);
+  if (rawKey.includes("istanbul")) return "istanbul";
+  const firstPart = cityRaw.split(/[\\/|,;:–-]/)[0]?.trim() || cityRaw;
+  return toKey(firstPart);
+}
+
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
