@@ -114,7 +114,13 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
 
 export function getDistanceKmToIstanbul(cityRaw: string | null | undefined): number | null {
   if (!cityRaw) return null;
-  const key = toKey(cityRaw);
+  const rawKey = toKey(cityRaw);
+  // If text clearly contains Istanbul anywhere (e.g. "İstanbul / Sarıyer"), treat as 0 km
+  if (rawKey.includes("istanbul")) return 0;
+
+  // Try first segment before common separators to extract the province name
+  const firstPart = cityRaw.split(/[\\/|,;:–-]/)[0]?.trim() || cityRaw;
+  const key = toKey(firstPart);
   const coords = CITY_COORDS[key];
   if (!coords) return null;
   return Math.round(haversine(coords.lat, coords.lon, ISTANBUL.lat, ISTANBUL.lon));
