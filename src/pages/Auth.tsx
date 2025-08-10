@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 
+const ADMIN_EMAIL = "admin@rooktech.com";
+
 interface LoginForm {
   email: string;
   password: string;
@@ -15,25 +17,37 @@ interface LoginForm {
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { register, handleSubmit } = useForm<LoginForm>();
+  const { register, handleSubmit, setValue } = useForm<LoginForm>();
 
   useEffect(() => {
+    // İsteğe bağlı: örnek kimlik bilgilerini doldur
+    setValue("email", ADMIN_EMAIL);
+    setValue("password", "rooktech");
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (session) navigate("/network", { replace: true });
+      if (session?.user?.email === ADMIN_EMAIL) navigate("/network", { replace: true });
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/network", { replace: true });
+      if (session?.user?.email === ADMIN_EMAIL) navigate("/network", { replace: true });
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, setValue]);
 
   const onSubmit = async (values: LoginForm) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    if (values.email !== ADMIN_EMAIL) {
+      toast({ title: "Yetkisiz kullanıcı", description: "Sadece admin hesabı ile giriş yapılabilir.", variant: "destructive" });
+      return;
+    }
+    const { error, data } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
     });
     if (error) {
       toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (data.session?.user?.email !== ADMIN_EMAIL) {
+      toast({ title: "Yetkisiz kullanıcı", description: "Sadece admin hesabı ile giriş yapılabilir.", variant: "destructive" });
       return;
     }
     toast({ title: "Hoş geldiniz", description: "Başarıyla giriş yapıldı." });
@@ -51,13 +65,14 @@ const Auth = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-posta</Label>
-              <Input id="email" type="email" placeholder="admin@alan.com" {...register("email", { required: true })} />
+              <Input id="email" type="email" placeholder="admin@rooktech.com" {...register("email", { required: true })} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Şifre</Label>
               <Input id="password" type="password" placeholder="••••••••" {...register("password", { required: true })} />
             </div>
             <Button type="submit" className="w-full">Giriş Yap</Button>
+            <p className="text-xs text-muted-foreground">Not: Eğer bu hesap Supabase'de yoksa kullanıcıyı ekleyin.</p>
           </form>
         </CardContent>
       </Card>
