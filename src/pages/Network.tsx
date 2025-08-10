@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ContactForm } from "@/components/network/ContactForm";
 import { ContactList } from "@/components/network/ContactList";
 import { NetworkFlow } from "@/components/network/NetworkFlow";
+import { StatsBar } from "@/components/network/StatsBar";
 
 interface SimpleContact { id: string; first_name: string; last_name: string }
 
@@ -106,6 +107,13 @@ const Network = () => {
         </div>
         <InviteButtonInline />
       </header>
+
+      <div className="mb-6">
+        {/* Stats */}
+        <Card className="p-4 md:p-6">
+          <StatsBar />
+        </Card>
+      </div>
 
       <Card className="p-4 md:p-6">
         <Tabs defaultValue="add" className="w-full">

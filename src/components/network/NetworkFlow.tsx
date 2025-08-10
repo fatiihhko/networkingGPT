@@ -120,7 +120,7 @@ export const NetworkFlow = () => {
           {active && (
             <div className="space-y-2 text-sm">
               <div>Şehir: {active.city || "-"}</div>
-              <div>Meslek: {"-"}</div>
+              <div>Meslek: {active.profession || "-"}</div>
               <div>Yakınlık: {active.relationship_degree}</div>
               <div>Hizmetler: {active.services?.length ? active.services.join(", ") : "-"}</div>
               <div>Özellikler: {active.tags?.length ? active.tags.join(", ") : "-"}</div>

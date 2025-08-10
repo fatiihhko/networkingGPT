@@ -9,6 +9,7 @@ export type Contact = {
   first_name: string;
   last_name: string;
   city: string | null;
+  profession: string | null;
   relationship_degree: number;
   services: string[];
   tags: string[];

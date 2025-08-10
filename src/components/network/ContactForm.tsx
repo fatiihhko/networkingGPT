@@ -13,6 +13,7 @@ const schema = z.object({
   first_name: z.string().min(1, "Zorunlu"),
   last_name: z.string().min(1, "Zorunlu"),
   city: z.string().optional(),
+  profession: z.string().optional(),
   relationship_degree: z.number().min(0).max(10),
   services: z.string().optional(),
   tags: z.string().optional(),
@@ -52,6 +53,7 @@ export const ContactForm = ({
         first_name: values.first_name,
         last_name: values.last_name,
         city: values.city,
+        profession: values.profession,
         relationship_degree: values.relationship_degree,
         services: servicesArr,
         tags: tagsArr,
@@ -87,6 +89,10 @@ export const ContactForm = ({
       <div className="space-y-2">
         <Label>Şehir / Lokasyon</Label>
         <Input {...form.register("city")} placeholder="İl / İlçe" />
+      </div>
+      <div className="space-y-2">
+        <Label>Meslek</Label>
+        <Input {...form.register("profession")} placeholder="Örn: Avukat, Tasarımcı" />
       </div>
       <div className="space-y-2">
         <Label>Telefon</Label>

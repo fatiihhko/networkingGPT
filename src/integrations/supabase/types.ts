@@ -25,6 +25,7 @@ export type Database = {
           last_name: string
           parent_contact_id: string | null
           phone: string | null
+          profession: string | null
           relationship_degree: number
           services: string[]
           tags: string[]
@@ -41,6 +42,7 @@ export type Database = {
           last_name: string
           parent_contact_id?: string | null
           phone?: string | null
+          profession?: string | null
           relationship_degree?: number
           services?: string[]
           tags?: string[]
@@ -57,6 +59,7 @@ export type Database = {
           last_name?: string
           parent_contact_id?: string | null
           phone?: string | null
+          profession?: string | null
           relationship_degree?: number
           services?: string[]
           tags?: string[]
