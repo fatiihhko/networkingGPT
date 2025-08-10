@@ -24,14 +24,9 @@ const Auth = () => {
     setValue("email", ADMIN_EMAIL);
     setValue("password", "rooktech");
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (session?.user?.email === ADMIN_EMAIL) navigate("/network", { replace: true });
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email === ADMIN_EMAIL) navigate("/network", { replace: true });
-    });
-    return () => subscription.unsubscribe();
-  }, [navigate, setValue]);
+    // Her giriş denemesinde formu göstermek için mevcut oturumu kapat
+    supabase.auth.signOut().catch(() => {});
+  }, [setValue]);
 
   const onSubmit = async (values: LoginForm) => {
     if (values.email !== ADMIN_EMAIL) {
