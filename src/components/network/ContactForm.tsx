@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,9 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
 const schema = z.object({
   first_name: z.string().min(1, "Zorunlu"),
   last_name: z.string().min(1, "Zorunlu"),
@@ -25,54 +26,92 @@ const schema = z.object({
 export const ContactForm = ({
   parentContactId,
   onSuccess,
+  inviteToken,
 }: {
   parentContactId?: string;
   onSuccess?: (contact: any, values: z.infer<typeof schema>) => void;
+  inviteToken?: string;
 }) => {
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      relationship_degree: 5,
-    },
-  });
+const form = useForm<z.infer<typeof schema>>({
+  resolver: zodResolver(schema),
+  defaultValues: {
+    relationship_degree: 5,
+  },
+});
+const [sendEmail, setSendEmail] = useState(false);
 
-  const onSubmit = async (values: z.infer<typeof schema>) => {
-    const { data: { user }, error: userErr } = await supabase.auth.getUser();
-    if (userErr || !user) {
-      toast({ title: "Oturum bulunamadı", description: "Lütfen tekrar giriş yapın.", variant: "destructive" });
-      return;
-    }
+const onSubmit = async (values: z.infer<typeof schema>) => {
+  const servicesArr = values.services?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
+  const tagsArr = values.tags?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
 
-    const servicesArr = values.services?.split(",").map(s => s.trim()).filter(Boolean) ?? [];
-    const tagsArr = values.tags?.split(",").map(s => s.trim()).filter(Boolean) ?? [];
-
-    const { data: inserted, error } = await supabase
-      .from("contacts")
-      .insert({
-        user_id: user.id,
-        first_name: values.first_name,
-        last_name: values.last_name,
-        city: values.city,
-        profession: values.profession,
-        relationship_degree: values.relationship_degree,
-        services: servicesArr,
-        tags: tagsArr,
-        phone: values.phone,
-        email: values.email || null,
-        description: values.description,
-        parent_contact_id: parentContactId ?? null,
-      })
-      .select()
-      .single();
+  // If inviteToken exists, submit via Edge Function (no auth required)
+  if (inviteToken) {
+    const { data, error } = await supabase.functions.invoke("invite-submit", {
+      body: {
+        token: inviteToken,
+        sendEmail,
+        contact: {
+          first_name: values.first_name,
+          last_name: values.last_name,
+          city: values.city,
+          profession: values.profession,
+          relationship_degree: values.relationship_degree,
+          services: servicesArr,
+          tags: tagsArr,
+          phone: values.phone,
+          email: values.email || null,
+          description: values.description,
+          parent_contact_id: parentContactId ?? null,
+        },
+      },
+    });
 
     if (error) {
       toast({ title: "Kaydedilemedi", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
-      onSuccess?.(inserted, values);
-      form.reset({ relationship_degree: 5 });
+      return;
     }
-  };
+
+    toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+    onSuccess?.(data?.contact ?? null, values);
+    form.reset({ relationship_degree: 5 });
+    setSendEmail(false);
+    return;
+  }
+
+  // Default (authenticated) flow
+  const { data: { user }, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !user) {
+    toast({ title: "Oturum bulunamadı", description: "Lütfen tekrar giriş yapın.", variant: "destructive" });
+    return;
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("contacts")
+    .insert({
+      user_id: user.id,
+      first_name: values.first_name,
+      last_name: values.last_name,
+      city: values.city,
+      profession: values.profession,
+      relationship_degree: values.relationship_degree,
+      services: servicesArr,
+      tags: tagsArr,
+      phone: values.phone,
+      email: values.email || null,
+      description: values.description,
+      parent_contact_id: parentContactId ?? null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    toast({ title: "Kaydedilemedi", description: error.message, variant: "destructive" });
+  } else {
+    toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+    onSuccess?.(inserted, values);
+    form.reset({ relationship_degree: 5 });
+  }
+};
 
   const rel = form.watch("relationship_degree");
 
@@ -118,9 +157,15 @@ export const ContactForm = ({
         <Label>Açıklama</Label>
         <Textarea {...form.register("description")} placeholder="Kısa açıklama" />
       </div>
-      <div className="md:col-span-2">
-        <Button type="submit">Kaydet</Button>
-      </div>
+{inviteToken && (
+  <div className="flex items-center gap-2 md:col-span-2">
+    <Checkbox id="sendEmail" checked={sendEmail} onCheckedChange={(v) => setSendEmail(!!v)} />
+    <Label htmlFor="sendEmail">Bilgilendirme e-postası gönderilsin mi?</Label>
+  </div>
+)}
+<div className="md:col-span-2">
+  <Button type="submit">Kaydet</Button>
+</div>
     </form>
   );
 };
