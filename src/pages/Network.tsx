@@ -111,100 +111,6 @@ const InviteButtonInline = () => {
   );
 };
 
-// Davet listesi (kopyalama butonlarıyla)
-const InvitesList = () => {
-  const [invites, setInvites] = useState<Array<{ id: string; token: string; uses: number; max_uses: number; parent_contact_id: string | null; created_at: string }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [names, setNames] = useState<Record<string, string>>({});
-
-  const load = async () => {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setInvites([]);
-      setLoading(false);
-      return;
-    }
-    const { data, error } = await supabase
-      .from("invites")
-      .select("id, token, uses, max_uses, parent_contact_id, created_at")
-      .eq("owner_user_id", user.id)
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast({ title: "Davetler yüklenemedi", description: error.message, variant: "destructive" });
-      setInvites([]);
-      setLoading(false);
-      return;
-    }
-    const invitesData = (data as any) || [];
-
-    const parentIds = Array.from(
-      new Set(invitesData.map((i: any) => i.parent_contact_id).filter(Boolean))
-    ) as string[];
-    if (parentIds.length > 0) {
-      const { data: contacts, error: cErr } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name")
-        .in("id", parentIds);
-      if (!cErr && contacts) {
-        const m: Record<string, string> = {};
-        (contacts as any).forEach((c: any) => {
-          m[c.id] = `${c.first_name} ${c.last_name}`;
-        });
-        setNames(m);
-      }
-    }
-
-    setInvites(invitesData);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    load();
-    const onRefresh = () => load();
-    // @ts-ignore - CustomEvent typing is fine in runtime
-    window.addEventListener("invites:refresh", onRefresh);
-    return () => window.removeEventListener("invites:refresh", onRefresh as any);
-  }, []);
-
-  const copy = async (url: string) => {
-    await navigator.clipboard.writeText(url).catch(() => {});
-    toast({ title: "Bağlantı kopyalandı" });
-  };
-
-  const base = window.location.origin;
-
-  return (
-    <div>
-      <h3 className="text-lg font-medium mb-3">Davet Bağlantıları</h3>
-      {loading ? (
-        <div>Yükleniyor…</div>
-      ) : invites.length === 0 ? (
-        <div className="text-muted-foreground">Henüz davet oluşturulmadı.</div>
-      ) : (
-        <ul className="space-y-2">
-          {invites.map((i) => {
-            const url = `${base}/invite/${i.token}`;
-            const parent = i.parent_contact_id ? names[i.parent_contact_id] || "Bilinmeyen" : "Yok";
-            const limitLabel = i.max_uses === 0 ? "Sınırsız" : i.max_uses;
-            return (
-              <li key={i.id} className="flex flex-col md:flex-row md:items-center gap-2 justify-between rounded-md border bg-card p-3">
-                <div className="flex flex-col">
-                  <span className="text-sm text-muted-foreground">Üst Kişi: {parent}</span>
-                  <span className="text-sm">Kullanım: {i.uses} / {limitLabel}</span>
-                  <span className="text-xs text-muted-foreground break-all">{url}</span>
-                </div>
-                <div>
-                  <Button variant="secondary" onClick={() => copy(url)}>Kopyala</Button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-};
 
 const Network = () => {
   return (
@@ -217,11 +123,6 @@ const Network = () => {
         <InviteButtonInline />
       </header>
 
-      <div className="mb-6">
-        <Card className="p-4 md:p-6">
-          <InvitesList />
-        </Card>
-      </div>
 
       <div className="mb-6">
         <Card className="p-4 md:p-6">
