@@ -2,12 +2,13 @@
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <main className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold">Networking GPT</h1>
+        <p className="text-xl text-muted-foreground">Rooktech esintili modern iç ağ paneli.</p>
+        <a href="/auth" className="underline">Giriş Yap</a>
       </div>
-    </div>
+    </main>
   );
 };
 
