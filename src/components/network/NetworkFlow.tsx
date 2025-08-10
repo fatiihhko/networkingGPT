@@ -6,7 +6,7 @@ import { ReactFlow, Background, Controls, MiniMap } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 export const NetworkFlow = () => {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<(Contact & { parent_contact_id?: string | null })[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<Contact | null>(null);
 
@@ -41,7 +41,8 @@ export const NetworkFlow = () => {
 
   const edges = useMemo(() => contacts.map((c) => {
     const stroke = c.relationship_degree >= 8 ? "hsl(var(--closeness-green))" : c.relationship_degree >= 5 ? "hsl(var(--closeness-yellow))" : "hsl(var(--closeness-red))";
-    return { id: `e-${c.id}`, source: "admin", target: c.id, animated: c.relationship_degree >= 8, style: { stroke } } as any;
+    const source = c.parent_contact_id ? String(c.parent_contact_id) : "admin";
+    return { id: `e-${source}-${c.id}`, source, target: c.id, animated: c.relationship_degree >= 8, style: { stroke } } as any;
   }), [contacts]);
 
   return (

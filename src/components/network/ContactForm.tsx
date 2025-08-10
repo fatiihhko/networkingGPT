@@ -21,7 +21,13 @@ const schema = z.object({
   description: z.string().optional(),
 });
 
-export const ContactForm = () => {
+export const ContactForm = ({
+  parentContactId,
+  onSuccess,
+}: {
+  parentContactId?: string;
+  onSuccess?: (contact: any, values: z.infer<typeof schema>) => void;
+}) => {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -39,23 +45,29 @@ export const ContactForm = () => {
     const servicesArr = values.services?.split(",").map(s => s.trim()).filter(Boolean) ?? [];
     const tagsArr = values.tags?.split(",").map(s => s.trim()).filter(Boolean) ?? [];
 
-    const { error } = await supabase.from("contacts").insert({
-      user_id: user.id,
-      first_name: values.first_name,
-      last_name: values.last_name,
-      city: values.city,
-      relationship_degree: values.relationship_degree,
-      services: servicesArr,
-      tags: tagsArr,
-      phone: values.phone,
-      email: values.email || null,
-      description: values.description,
-    });
+    const { data: inserted, error } = await supabase
+      .from("contacts")
+      .insert({
+        user_id: user.id,
+        first_name: values.first_name,
+        last_name: values.last_name,
+        city: values.city,
+        relationship_degree: values.relationship_degree,
+        services: servicesArr,
+        tags: tagsArr,
+        phone: values.phone,
+        email: values.email || null,
+        description: values.description,
+        parent_contact_id: parentContactId ?? null,
+      })
+      .select()
+      .single();
 
     if (error) {
       toast({ title: "Kaydedilemedi", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+      onSuccess?.(inserted, values);
       form.reset({ relationship_degree: 5 });
     }
   };
