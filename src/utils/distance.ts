@@ -89,14 +89,18 @@ const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
 
 function toKey(city: string) {
   return city
+    .toString()
     .trim()
     .toLowerCase()
-    .replace(/ı/g, "i")
-    .replace(/ğ/g, "g")
-    .replace(/ü/g, "u")
-    .replace(/ş/g, "s")
-    .replace(/ö/g, "o")
-    .replace(/ç/g, "c");
+    .normalize('NFD')
+    // Fix for Turkish dotted 'İ' -> 'i' (i + combining dot U+0307)
+    .replace(/\u0307/g, '')
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
 }
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
