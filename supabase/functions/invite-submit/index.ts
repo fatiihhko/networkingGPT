@@ -63,7 +63,8 @@ serve(async (req: Request) => {
       });
     }
 
-    if (invite.uses >= invite.max_uses) {
+    // Allow unlimited usage when max_uses is 0
+    if ((invite.max_uses ?? 0) > 0 && invite.uses >= invite.max_uses) {
       return new Response(JSON.stringify({ error: "Davet kullanım hakkı dolmuş" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
