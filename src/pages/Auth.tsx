@@ -38,15 +38,46 @@ const Auth = () => {
       toast({ title: "Yetkisiz kullanıcı", description: "Sadece admin hesabı ile giriş yapılabilir.", variant: "destructive" });
       return;
     }
-    const { error, data } = await supabase.auth.signInWithPassword({
+
+    // Önce giriş yapmayı dene
+    const { error: signInErr, data: signInData } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password,
     });
-    if (error) {
-      toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
+
+    if (!signInErr) {
+      if (signInData.session?.user?.email !== ADMIN_EMAIL) {
+        toast({ title: "Yetkisiz kullanıcı", description: "Sadece admin hesabı ile giriş yapılabilir.", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Hoş geldiniz", description: "Başarıyla giriş yapıldı." });
+      navigate("/network", { replace: true });
       return;
     }
-    if (data.session?.user?.email !== ADMIN_EMAIL) {
+
+    // Hesap yoksa otomatik oluşturmayı dene
+    const redirectUrl = `${window.location.origin}/`;
+    const { error: signUpErr } = await supabase.auth.signUp({
+      email: values.email,
+      password: values.password,
+      options: { emailRedirectTo: redirectUrl },
+    });
+
+    if (signUpErr) {
+      toast({ title: "Giriş başarısız", description: signInErr.message || signUpErr.message, variant: "destructive" });
+      return;
+    }
+
+    // Tekrar giriş denemesi
+    const { error: secondErr, data: secondData } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
+    if (secondErr) {
+      toast({ title: "Giriş başarısız", description: secondErr.message, variant: "destructive" });
+      return;
+    }
+    if (secondData.session?.user?.email !== ADMIN_EMAIL) {
       toast({ title: "Yetkisiz kullanıcı", description: "Sadece admin hesabı ile giriş yapılabilir.", variant: "destructive" });
       return;
     }
