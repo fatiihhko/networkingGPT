@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Contact } from "./ContactList";
 import { ReactFlow, Background, Controls, MiniMap } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { classifyDistanceToIstanbul } from "@/utils/distance";
 
 export const NetworkFlow = () => {
   const [contacts, setContacts] = useState<(Contact & { parent_contact_id?: string | null })[]>([]);
@@ -84,11 +86,35 @@ export const NetworkFlow = () => {
 
     const contactNodes = contacts.map((c) => {
       const p = positions.get(c.id) || { x: dx, y: 0 };
+      const kategori = classifyDistanceToIstanbul(c.city || "");
       return {
         id: c.id,
-        data: { label: `${c.first_name} ${c.last_name}` },
+        data: {
+          label: (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex flex-col items-center text-center">
+                  <div className="font-medium text-sm md:text-base">{c.first_name} {c.last_name}</div>
+                  <div className="text-xs text-muted-foreground">{c.profession || "-"}</div>
+                  {kategori && (
+                    <span className="mt-1 inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] md:text-xs text-secondary-foreground">
+                      {kategori}
+                    </span>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="space-y-1">
+                  <div className="text-sm">{c.first_name} {c.last_name}</div>
+                  <div className="text-xs text-muted-foreground">Meslek: {c.profession || "-"}</div>
+                  <div className="text-xs text-muted-foreground">Şehir: {c.city || "-"}</div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )
+        },
         position: { x: p.x + offsetX, y: p.y + offsetY },
-        style: { padding: 10 },
+        style: { padding: 8 },
       } as any;
     });
 
@@ -102,15 +128,17 @@ export const NetworkFlow = () => {
   }), [contacts]);
 
   return (
-    <div className="h-[480px] w-full">
-      <ReactFlow nodes={nodes} edges={edges} onNodeClick={(_, node) => {
-        const found = contacts.find(c => c.id === node.id);
-        if (found) { setActive(found); setOpen(true); }
-      }} fitView>
-        <MiniMap />
-        <Controls />
-        <Background />
-      </ReactFlow>
+    <div className="w-full h-[420px] md:h-[560px]">
+      <TooltipProvider delayDuration={200}>
+        <ReactFlow nodes={nodes} edges={edges} onNodeClick={(_, node) => {
+          const found = contacts.find(c => c.id === node.id);
+          if (found) { setActive(found); setOpen(true); }
+        }} fitView>
+          <MiniMap />
+          <Controls />
+          <Background />
+        </ReactFlow>
+      </TooltipProvider>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
