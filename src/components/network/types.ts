@@ -10,4 +10,5 @@ export type Contact = {
   phone: string | null;
   email: string | null;
   description: string | null;
+  parent_contact_id: string | null;
 };

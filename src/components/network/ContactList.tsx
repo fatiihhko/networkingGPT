@@ -64,6 +64,31 @@ export const ContactList = () => {
     setDeletingId(null);
   };
 
+  const degreeMap = useMemo(() => {
+    const map = new Map<string, Contact>();
+    contacts.forEach((c) => map.set(c.id, c));
+    const cache = new Map<string, number>();
+    const getDegree = (id: string): number => {
+      if (cache.has(id)) return cache.get(id)!;
+      const visited = new Set<string>();
+      let current = map.get(id);
+      let degree = 1;
+      while (current && current.parent_contact_id) {
+        if (visited.has(current.id)) break;
+        visited.add(current.id);
+        degree++;
+        current = map.get(current.parent_contact_id);
+      }
+      cache.set(id, degree);
+      return degree;
+    };
+    const out: Record<string, number> = {};
+    contacts.forEach((c) => {
+      out[c.id] = getDegree(c.id);
+    });
+    return out;
+  }, [contacts]);
+
   const cards = useMemo(
     () =>
       contacts.map((c) => (
@@ -84,6 +109,9 @@ export const ContactList = () => {
               <Badge className={`flex items-center gap-1 ${degreeColor(c.relationship_degree)}`}>
                 <Star className="h-3.5 w-3.5" />
                 <span>{c.relationship_degree}/10</span>
+              </Badge>
+              <Badge variant="secondary" className="rounded-full">
+                {(degreeMap[c.id] ?? 1)}. derece
               </Badge>
 
               <AlertDialog>
