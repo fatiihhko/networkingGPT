@@ -23,6 +23,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          parent_contact_id: string | null
           phone: string | null
           relationship_degree: number
           services: string[]
@@ -38,6 +39,7 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
+          parent_contact_id?: string | null
           phone?: string | null
           relationship_degree?: number
           services?: string[]
@@ -53,6 +55,7 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          parent_contact_id?: string | null
           phone?: string | null
           relationship_degree?: number
           services?: string[]
@@ -60,7 +63,50 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contacts_parent_contact_id_fkey"
+            columns: ["parent_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invites: {
+        Row: {
+          created_at: string
+          id: string
+          max_uses: number
+          parent_contact_id: string | null
+          token: string
+          uses: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_uses?: number
+          parent_contact_id?: string | null
+          token: string
+          uses?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_uses?: number
+          parent_contact_id?: string | null
+          token?: string
+          uses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_parent_contact_id_fkey"
+            columns: ["parent_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
