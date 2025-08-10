@@ -94,7 +94,7 @@ export const NetworkFlow = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex flex-col items-center text-center">
-                  <div className="font-medium text-sm md:text-base text-foreground">{c.first_name} {c.last_name}</div>
+                  <div className="font-medium text-sm md:text-base text-card-foreground">{c.first_name} {c.last_name}</div>
                   <div className="text-xs text-muted-foreground">{c.profession || "-"}</div>
                   {kategori && (
                     <span className="mt-1 inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] md:text-xs text-secondary-foreground">
@@ -114,7 +114,7 @@ export const NetworkFlow = () => {
           )
         },
         position: { x: p.x + offsetX, y: p.y + offsetY },
-        style: { padding: 8, color: 'hsl(var(--foreground))' },
+        style: { padding: 8, color: 'hsl(var(--card-foreground))', background: 'hsl(var(--card))' },
       } as any;
     });
 
