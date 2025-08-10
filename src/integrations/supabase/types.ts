@@ -78,6 +78,7 @@ export type Database = {
           created_at: string
           id: string
           max_uses: number
+          owner_user_id: string
           parent_contact_id: string | null
           token: string
           uses: number
@@ -86,6 +87,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_uses?: number
+          owner_user_id: string
           parent_contact_id?: string | null
           token: string
           uses?: number
@@ -94,6 +96,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_uses?: number
+          owner_user_id?: string
           parent_contact_id?: string | null
           token?: string
           uses?: number
