@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Contact } from "./ContactList";
+import type { Contact } from "./types";
 import { ReactFlow, Background, Controls, MiniMap } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";

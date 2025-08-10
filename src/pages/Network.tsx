@@ -12,7 +12,8 @@ import { ContactForm } from "@/components/network/ContactForm";
 import { ContactList } from "@/components/network/ContactList";
 import { NetworkFlow } from "@/components/network/NetworkFlow";
 import { StatsBar } from "@/components/network/StatsBar";
-
+import { ContactsProvider } from "@/components/network/ContactsContext";
+import { AIAssistant } from "@/components/network/AIAssistant";
 interface SimpleContact { id: string; first_name: string; last_name: string }
 
 const InviteButtonInline = () => {
@@ -115,28 +116,30 @@ const Network = () => {
         </Card>
       </div>
 
-      <Card className="p-4 md:p-6">
-        <Tabs defaultValue="add" className="w-full">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
-            <TabsTrigger value="add">Kişi Ekle</TabsTrigger>
-            <TabsTrigger value="list">Ağ Listesi</TabsTrigger>
-            <TabsTrigger value="map">Görsel Ağ Haritası</TabsTrigger>
-            <TabsTrigger value="ai">Yapay Zeka Asistanı</TabsTrigger>
-          </TabsList>
-          <TabsContent value="add">
-            <ContactForm />
-          </TabsContent>
-          <TabsContent value="list">
-            <ContactList />
-          </TabsContent>
-          <TabsContent value="map">
-            <NetworkFlow />
-          </TabsContent>
-          <TabsContent value="ai">
-            <div className="text-muted-foreground">Yakında…</div>
-          </TabsContent>
-        </Tabs>
-      </Card>
+      <ContactsProvider>
+        <Card className="p-4 md:p-6">
+          <Tabs defaultValue="add" className="w-full">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
+              <TabsTrigger value="add">Kişi Ekle</TabsTrigger>
+              <TabsTrigger value="list">Ağ Listesi</TabsTrigger>
+              <TabsTrigger value="map">Görsel Ağ Haritası</TabsTrigger>
+              <TabsTrigger value="ai">Yapay Zeka Asistanı</TabsTrigger>
+            </TabsList>
+            <TabsContent value="add">
+              <ContactForm />
+            </TabsContent>
+            <TabsContent value="list">
+              <ContactList />
+            </TabsContent>
+            <TabsContent value="map">
+              <NetworkFlow />
+            </TabsContent>
+            <TabsContent value="ai">
+              <AIAssistant />
+            </TabsContent>
+          </Tabs>
+        </Card>
+      </ContactsProvider>
     </main>
   );
 };

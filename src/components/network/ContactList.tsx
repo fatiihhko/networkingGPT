@@ -16,20 +16,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Building2, MapPin, Phone, Mail, Star, Trash2, Tag } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-export type Contact = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  city: string | null;
-  profession: string | null;
-  relationship_degree: number;
-  services: string[];
-  tags: string[];
-  phone: string | null;
-  email: string | null;
-  description: string | null;
-};
+import { useContacts } from "./ContactsContext";
+import type { Contact } from "./types";
 
 function degreeColor(degree: number) {
   if (degree >= 8) return "bg-[hsl(var(--closeness-green))] text-white";
@@ -40,7 +28,7 @@ function degreeColor(degree: number) {
 export const ContactList = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
+  const { setContacts: setCtxContacts } = useContacts();
   useEffect(() => {
     let mounted = true;
     const load = async () => {
@@ -49,7 +37,10 @@ export const ContactList = () => {
         .select("*")
         .order("created_at", { ascending: false });
       if (!mounted) return;
-      if (!error && data) setContacts(data as any);
+      if (!error && data) {
+        setContacts(data as any);
+        try { setCtxContacts(data as any); } catch {}
+      }
     };
     load();
     const { data: sub } = supabase.auth.onAuthStateChange(() => load());
@@ -64,7 +55,9 @@ export const ContactList = () => {
     if (error) {
       toast({ title: "Silinemedi", description: error.message, variant: "destructive" });
     } else {
-      setContacts((prev) => prev.filter((c) => c.id !== id));
+      const updated = contacts.filter((c) => c.id !== id);
+      setContacts(updated);
+      try { setCtxContacts(updated); } catch {}
       toast({ title: "Kişi silindi", description: "Kişi ağınızdan kaldırıldı." });
     }
     setDeletingId(null);
