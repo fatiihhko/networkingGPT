@@ -18,25 +18,81 @@ export const NetworkFlow = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("contacts-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "contacts" },
+        async () => {
+          const { data } = await supabase.from("contacts").select("*");
+          setContacts((data || []) as any);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const nodes = useMemo(() => {
-    const centerX = 350, centerY = 250;
+    // Build children map for hierarchical layout
+    const children = new Map<string, string[]>();
+    children.set("admin", []);
+    contacts.forEach((c) => {
+      const parent = c.parent_contact_id ? String(c.parent_contact_id) : "admin";
+      if (!children.has(parent)) children.set(parent, []);
+      children.get(parent)!.push(c.id);
+      if (!children.has(c.id)) children.set(c.id, []);
+    });
+
+    const dx = 220; // horizontal gap per depth
+    const dy = 100; // vertical gap between leaves
+    const positions = new Map<string, { x: number; y: number }>();
+    let nextY = 0;
+
+    const assign = (id: string, depth: number): number => {
+      const kids = children.get(id) || [];
+      if (kids.length === 0) {
+        const y = nextY * dy;
+        nextY += 1;
+        positions.set(id, { x: depth * dx, y });
+        return y;
+      }
+      const childYs = kids.map((kid) => assign(kid, depth + 1));
+      const y = childYs.reduce((a, b) => a + b, 0) / childYs.length;
+      positions.set(id, { x: depth * dx, y });
+      return y;
+    };
+
+    assign("admin", 0);
+
+    // Normalize to positive space with a margin
+    let minX = Infinity, minY = Infinity;
+    positions.forEach((p) => { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); });
+    const offsetX = 50 - (isFinite(minX) ? minX : 0);
+    const offsetY = 50 - (isFinite(minY) ? minY : 0);
+
+    const adminPos = positions.get("admin") || { x: 0, y: 0 };
     const adminNode = {
       id: "admin",
       data: { label: "Admin" },
-      position: { x: centerX, y: centerY },
+      position: { x: adminPos.x + offsetX, y: adminPos.y + offsetY },
       style: { background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderRadius: 9999, padding: 20 },
     } as any;
-    const radius = 180;
-    const others = contacts.map((c, i) => {
-      const angle = (i / Math.max(contacts.length, 1)) * 2 * Math.PI;
+
+    const contactNodes = contacts.map((c) => {
+      const p = positions.get(c.id) || { x: dx, y: 0 };
       return {
         id: c.id,
         data: { label: `${c.first_name} ${c.last_name}` },
-        position: { x: centerX + Math.cos(angle) * radius, y: centerY + Math.sin(angle) * radius },
+        position: { x: p.x + offsetX, y: p.y + offsetY },
         style: { padding: 10 },
       } as any;
     });
-    return [adminNode, ...others];
+
+    return [adminNode, ...contactNodes];
   }, [contacts]);
 
   const edges = useMemo(() => contacts.map((c) => {
@@ -64,10 +120,11 @@ export const NetworkFlow = () => {
           {active && (
             <div className="space-y-2 text-sm">
               <div>Şehir: {active.city || "-"}</div>
+              <div>Meslek: {"-"}</div>
               <div>Yakınlık: {active.relationship_degree}</div>
-              <div>Etiketler: {active.tags?.length ? active.tags.join(", ") : "-"}</div>
               <div>Hizmetler: {active.services?.length ? active.services.join(", ") : "-"}</div>
-              <div>Açıklama: {active.description || "-"}</div>
+              <div>Özellikler: {active.tags?.length ? active.tags.join(", ") : "-"}</div>
+              <div>Notlar: {active.description || "-"}</div>
             </div>
           )}
         </DialogContent>
