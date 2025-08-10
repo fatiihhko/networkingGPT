@@ -18,6 +18,7 @@ import { Building2, MapPin, Phone, Mail, Star, Trash2, Tag } from "lucide-react"
 import { toast } from "@/hooks/use-toast";
 import { useContacts } from "./ContactsContext";
 import type { Contact } from "./types";
+import { classifyDistanceToIstanbul } from "@/utils/distance";
 
 function degreeColor(degree: number) {
   if (degree >= 8) return "bg-[hsl(var(--closeness-green))] text-white";
@@ -109,11 +110,28 @@ export const ContactList = () => {
             </div>
           </div>
 
-          {/* Konum */}
+          {/* Konum + Mesafe Rozeti */}
           <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
             <span>{c.city || "-"}</span>
           </div>
+          {(() => {
+            const label = classifyDistanceToIstanbul(c.city);
+            const pretty: Record<string, string> = {
+              "çok yakın": "Çok Yakın",
+              "yakın": "Yakın",
+              "orta": "Orta",
+              "uzak": "Uzak",
+              "çok uzak": "Çok Uzak",
+            };
+            return label ? (
+              <div className="mt-2">
+                <Badge variant="secondary" className="rounded-full">
+                  {pretty[label]}
+                </Badge>
+              </div>
+            ) : null;
+          })()}
 
           {/* Yapabilecekleri */}
           {c.services?.length ? (
