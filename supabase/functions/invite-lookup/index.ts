@@ -29,31 +29,43 @@ serve(async (req: Request) => {
       });
     }
 
-    const { data: invite, error } = await admin
+    // Load invite with chain information
+    const { data: inviteData, error } = await admin
       .from("invites")
-      .select("id, uses_count, max_uses, parent_contact_id, status")
+      .select(`
+        id, 
+        uses_count, 
+        max_uses, 
+        parent_contact_id, 
+        status,
+        owner_user_id,
+        chain_id,
+        invite_chains!inner(max_uses, remaining_uses, status)
+      `)
       .eq("token", token)
       .maybeSingle();
 
     if (error) throw error;
 
-    if (!invite) {
+    if (!inviteData) {
       return new Response(JSON.stringify({ valid: false, message: "Davet bulunamadı" }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const unlimited = (invite.max_uses ?? 0) === 0;
-    const exhausted = invite.status !== 'active';
-    const remaining = unlimited ? null : (invite.max_uses ?? 0);
+    const chain = inviteData.invite_chains;
+    const unlimited = (chain.max_uses ?? 0) === 0;
+    const exhausted = inviteData.status !== 'active' || chain.status !== 'active' || 
+                     (!unlimited && (chain.remaining_uses ?? 0) <= 0);
+    const remaining = unlimited ? null : chain.remaining_uses;
 
     return new Response(
       JSON.stringify({
         valid: true,
         exhausted,
         remaining,
-        parent_contact_id: invite.parent_contact_id,
+        parent_contact_id: inviteData.parent_contact_id,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
