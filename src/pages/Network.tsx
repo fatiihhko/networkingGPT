@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+
 import { supabase } from "@/integrations/supabase/client";
 import { ContactForm } from "@/components/network/ContactForm";
 import { ContactList } from "@/components/network/ContactList";
@@ -22,24 +22,7 @@ const InviteButtonInline = () => {
   const [open, setOpen] = useState(false);
   const [maxUses, setMaxUses] = useState<number>(0);
   const [link, setLink] = useState<string>("");
-  const [contacts, setContacts] = useState<Array<{ id: string; name: string }>>([]);
-  const [inviterId, setInviterId] = useState<string>("");
 
-  useEffect(() => {
-    const fetchContacts = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data, error } = await supabase
-        .from("contacts")
-        .select("id, first_name, last_name")
-        .eq("user_id", user.id)
-        .order("first_name", { ascending: true });
-      if (!error && data) {
-        setContacts(data.map((c) => ({ id: c.id, name: `${c.first_name} ${c.last_name}`.trim() })));
-      }
-    };
-    if (open) fetchContacts();
-  }, [open]);
 
   const createInvite = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -48,14 +31,9 @@ const InviteButtonInline = () => {
       return;
     }
 
-    if (!inviterId) {
-      toast({ title: "Davet oluşturulamadı", description: "Davet oluşturulamadı: Daveti gönderen kişi ağda bulunmuyor.", variant: "destructive" });
-      return;
-    }
 
     const { data, error } = await supabase.functions.invoke("invite-create", {
       body: {
-        inviter_contact_id: inviterId,
         max_uses: Number.isFinite(maxUses) ? maxUses : 0,
       },
     });
@@ -83,19 +61,6 @@ const InviteButtonInline = () => {
           <DialogTitle>Davetiye Bağlantısı Oluştur</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Daveti gönderen kişi</Label>
-            <Select value={inviterId} onValueChange={setInviterId}>
-              <SelectTrigger aria-label="Daveti göndereni seçin">
-                <SelectValue placeholder="Kişi seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                {contacts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <div className="space-y-2">
             <Label>Kullanım limiti (0 = sınırsız)</Label>
             <Input
