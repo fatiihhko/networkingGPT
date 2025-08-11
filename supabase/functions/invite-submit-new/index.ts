@@ -147,7 +147,7 @@ serve(async (req: Request) => {
 
     const insertedContactId: string = result.contact_id;
 
-    // Davet + zincir bilgisi
+    // Davet + zincir bilgisi - bu kontrol RPC çağrısından ÖNCE yapılmalı
     const { data: inviteData, error: inviteErr } = await admin
       .from("invites")
       .select(
@@ -171,20 +171,31 @@ serve(async (req: Request) => {
       console.warn("Invite fetch warning:", inviteErr.message);
     }
 
+    // RPC sonucundan gelen remaining_uses'i kullanarak email gönderim kararı verelim
+    // Bu değer işlem SONRASI durumu gösterir, ama aslında ÖNCESI durumu önemli
+    const canSendEmail = sendEmail && contact.email && inviteData && resend && result.chain_status === "active";
+    
+    // Eğer chain hala active ise veya remaining_uses > 0 ise email gönderebiliriz
+    // Çünkü revoked olsa bile bu işlemde kullanılabilirdi demektir
+    const shouldSendEmail = canSendEmail || (sendEmail && contact.email && inviteData && resend && 
+      ((result.remaining_uses !== null && result.remaining_uses >= 0) || result.chain_status === "active"));
+
     // Opsiyonel e‑posta (takip daveti)
-    if (sendEmail && contact.email && inviteData && resend) {
+    if (shouldSendEmail) {
       try {
         // invite_chains relation obj/array olabilir
         const chainRel = Array.isArray(inviteData.invite_chains)
           ? inviteData.invite_chains[0]
           : inviteData.invite_chains;
 
-        if (chainRel && chainRel.status === "active") {
-          const stillUsable =
-            chainRel.max_uses === 0 /* sınırsız */ ||
-            (typeof chainRel.remaining_uses === "number" && chainRel.remaining_uses > 0);
+        // Zincir bilgilerini kullanarak email gönderim kontrolü
+        if (chainRel) {
+          // Email göndermek için: zincir sınırsız VEYA hala kalan kullanım var VEYA az önce 0'a düştü
+          const canSendFollowUp = 
+            chainRel.max_uses === 0 || // sınırsız
+            (result.remaining_uses !== null && result.remaining_uses >= 0); // hala kullanım var veya az önce bitti
 
-          if (stillUsable) {
+          if (canSendFollowUp) {
             const newToken = crypto.randomUUID();
 
             const { error: newInvErr } = await admin.from("invites").insert({
