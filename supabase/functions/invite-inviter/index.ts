@@ -78,23 +78,10 @@ serve(async (req: Request) => {
       let inviterContactId: string | null = existing && existing.length > 0 ? existing[0].id : null;
 
       if (!inviterContactId) {
-        // Create minimal contact for inviter
-        const { data: inserted, error: insErr } = await admin
-          .from("contacts")
-          .insert({
-            user_id: (invite as any).owner_user_id,
-            parent_contact_id: null,
-            first_name: inviter.first_name,
-            last_name: inviter.last_name,
-            email: inviter.email,
-            services: [],
-            tags: [],
-            relationship_degree: 0,
-          })
-          .select("id")
-          .single();
-        if (insErr) throw insErr;
-        inviterContactId = inserted.id;
+        return new Response(
+          JSON.stringify({ error: "Bu e-posta adresi ağınızda kayıtlı değil. Lütfen önce bu kişiyi ağınıza ekleyin." }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
       }
 
       inviter_contact_id = inviterContactId;

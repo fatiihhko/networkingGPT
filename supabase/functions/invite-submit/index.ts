@@ -74,6 +74,14 @@ serve(async (req: Request) => {
       });
     }
 
+    // Require inviter_contact_id to exist in the owner's network
+    if (!(invite as any).inviter_contact_id) {
+      return new Response(
+        JSON.stringify({ error: "Bu e-posta adresi ağınızda kayıtlı değil. Lütfen önce bu kişiyi ağınıza ekleyin." }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Normalize arrays
     const toArray = (v?: string[] | string | null) =>
       Array.isArray(v)
