@@ -113,24 +113,32 @@ serve(async (req: Request) => {
     if (updErr) console.error("Failed to increment invite uses", updErr);
 
     // Optional email
-    if (sendEmail && contact.email) {
-      try {
-        const inviteLink = `${(base_url || '').replace(/\/$/, '')}/invite/${token}`;
-        await resend.emails.send({
-          from: "Lovable <onboarding@resend.dev>",
-          to: [contact.email],
-          subject: "Network GPT Bilgilendirme",
-          html: `
-            <h2>Network GPT'ye hoş geldiniz${contact.first_name ? ", " + contact.first_name : ""}!</h2>
-            <p>Ağınıza eklendiğiniz için teşekkürler. Sorunuz olursa bu e-postaya yanıt verebilirsiniz.</p>
-            <p>Başkalarını eklemek için bu davet bağlantısını kullanabilirsiniz:</p>
-            <p><a href="${inviteLink}">${inviteLink}</a></p>
-          `,
-        });
-      } catch (mailErr) {
-        console.error("Email send failed", mailErr);
-      }
-    }
+   if (sendEmail && contact.email) {
+  try {
+    const inviteLink = `${(base_url || '').replace(/\/$/, '')}/invite/${token}`;
+    const limitInfo = maxUses && maxUses > 0 
+      ? `(Kullanım limiti: ${maxUses} kişi)`
+      : "(Sınırsız kullanım)";
+
+    await resend.emails.send({
+      from: "Network GPT <no-reply@networkgpt.com>",
+      to: [contact.email],
+      subject: "Network GPT – Davet",
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333;">
+          <p><strong>${inviterName}</strong> sizi Network GPT ağına ekledi.</p>
+          <p>Başkalarını eklemek için bu davet bağlantısını kullanabilirsiniz:</p>
+          <p>
+            <a href="${inviteLink}" style="background-color:#6C63FF;color:#fff;padding:8px 14px;border-radius:5px;text-decoration:none;">Davet Linki</a>
+          </p>
+          <p>${limitInfo}</p>
+        </div>
+      `,
+    });
+  } catch (mailErr) {
+    console.error("Email send failed", mailErr);
+  }
+}
 
     return new Response(
       JSON.stringify({ ok: true, contact: inserted }),
