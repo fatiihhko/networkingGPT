@@ -99,7 +99,7 @@ serve(async (req: Request) => {
         inviter_first_name,
         inviter_last_name,
         chain_id,
-        invite_chains!inner(remaining_uses, status)
+        invite_chains!inner(remaining_uses:invite_chains.remaining_uses, status:invite_chains.status, max_uses:invite_chains.max_uses)
       `)
       .eq("token", token)
       .single();

@@ -36,23 +36,27 @@ serve(async (req: Request) => {
       );
     }
 
+    console.log("Looking up invite with token:", token);
+    
     // Load invite with chain information
     const { data: invite, error: invErr } = await admin
       .from("invites")
       .select(`
         id, 
         uses_count, 
-        max_uses, 
+        invites.max_uses, 
         owner_user_id, 
         parent_contact_id, 
-        status, 
+        invites.status, 
         inviter_email, 
         inviter_contact_id,
         chain_id,
-        invite_chains!inner(max_uses, remaining_uses, status)
+        invite_chains!inner(max_uses:invite_chains.max_uses, remaining_uses:invite_chains.remaining_uses, status:invite_chains.status)
       `)
       .eq("token", token)
       .maybeSingle();
+
+    console.log("Invite lookup result:", { invite, error: invErr });
 
     if (invErr) throw invErr;
     if (!invite) {
