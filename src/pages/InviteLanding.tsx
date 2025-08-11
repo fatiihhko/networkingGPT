@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface InviteLookupResponse {
   valid: boolean;
   exhausted: boolean;
-  remaining: number;
+  remaining: number | null;
   parent_contact_id: string | null;
   message?: string;
 }
@@ -74,6 +74,17 @@ useEffect(() => {
     load();
   }, [token]);
 
+  // Gerçek zamanlı davranış: sayfa açıkken davetin geçersizleşmesi durumunda otomatik yenile
+  useEffect(() => {
+    if (!token) return;
+    if (!lookup?.valid || lookup.exhausted) return;
+    const id = setInterval(async () => {
+      const { data } = await supabase.functions.invoke("invite-lookup", { body: { token } });
+      if (data) setLookup(data as any);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [token, lookup?.valid, lookup?.exhausted]);
+
 // Invite mode handles email sending and usage on the server via Edge Function
 
   const handleInviterSubmit = async (e: React.FormEvent) => {
@@ -118,7 +129,7 @@ useEffect(() => {
           </div>
         )}
         {!loading && lookup && exhausted && (
-          <div>Kullanım sınırına ulaşıldı.</div>
+          <div>Bu davet bağlantısının kullanım hakkı dolmuş.</div>
         )}
         {!loading && lookup && !exhausted && !stepOneDone && (
           <section aria-labelledby="step1" className="space-y-4">

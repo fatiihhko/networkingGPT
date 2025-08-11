@@ -45,8 +45,8 @@ serve(async (req: Request) => {
     }
 
     const unlimited = (invite.max_uses ?? 0) === 0;
-    const exhausted = invite.status !== 'active' ? true : (unlimited ? false : invite.uses_count >= invite.max_uses);
-    const remaining = unlimited ? null : Math.max(0, invite.max_uses - invite.uses_count);
+    const exhausted = invite.status !== 'active';
+    const remaining = unlimited ? null : (invite.max_uses ?? 0);
 
     return new Response(
       JSON.stringify({

@@ -63,10 +63,11 @@ serve(async (req: Request) => {
       });
     }
 
-    // Validate status and usage limits
+    // Validate status; max_uses semantics:
+    // - 0 => sınırsız (her zaman geçerli)
+    // - >0 => kullanılınca azaltılır, 0'a inince revoke edilir
     const unlimited = (invite.max_uses ?? 0) === 0;
-    const exhausted = invite.status !== 'active' ? true : (unlimited ? false : invite.uses_count >= invite.max_uses);
-    if (exhausted) {
+    if (invite.status !== 'active') {
       return new Response(JSON.stringify({ error: "Davet kullanım hakkı dolmuş" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -107,16 +108,25 @@ serve(async (req: Request) => {
 
     if (insErr) throw insErr;
 
-    // Increment uses_count for limited invites and revoke if limit reached
+    // Decrement max_uses for limited invites and revoke at 0; always increment uses_count
     if (!unlimited) {
-      const nextCount = (invite.uses_count ?? 0) + 1;
-      const updatePayload: Record<string, any> = { uses_count: nextCount };
-      if (nextCount >= (invite.max_uses ?? 0)) {
+      const newMax = Math.max(0, (invite.max_uses ?? 0) - 1);
+      const updatePayload: Record<string, any> = {
+        uses_count: (invite.uses_count ?? 0) + 1,
+        max_uses: newMax,
+      };
+      if (newMax === 0) {
         updatePayload.status = 'revoked';
       }
       const { error: updErr } = await admin
         .from("invites")
         .update(updatePayload)
+        .eq("id", invite.id);
+      if (updErr) console.error("Failed to update invite usage", updErr);
+    } else {
+      const { error: updErr } = await admin
+        .from("invites")
+        .update({ uses_count: (invite.uses_count ?? 0) + 1 })
         .eq("id", invite.id);
       if (updErr) console.error("Failed to update invite usage", updErr);
     }

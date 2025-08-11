@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { ContactForm } from "@/components/network/ContactForm";
 import { ContactList } from "@/components/network/ContactList";
@@ -16,12 +17,29 @@ import { AIAssistant } from "@/components/network/AIAssistant";
 import { UserPlus, List as ListIcon, Share2, Bot } from "lucide-react";
 
 
+
 const InviteButtonInline = () => {
   const [open, setOpen] = useState(false);
   const [maxUses, setMaxUses] = useState<number>(0);
   const [link, setLink] = useState<string>("");
+  const [contacts, setContacts] = useState<Array<{ id: string; name: string }>>([]);
+  const [inviterId, setInviterId] = useState<string>("");
 
-  // Kişi seçimi kaldırıldı; davet gönderen bilgisi davet sayfasında alınacak
+  useEffect(() => {
+    const fetchContacts = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name")
+        .eq("user_id", user.id)
+        .order("first_name", { ascending: true });
+      if (!error && data) {
+        setContacts(data.map((c) => ({ id: c.id, name: `${c.first_name} ${c.last_name}`.trim() })));
+      }
+    };
+    if (open) fetchContacts();
+  }, [open]);
 
   const createInvite = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -29,16 +47,25 @@ const InviteButtonInline = () => {
       toast({ title: "Giriş gerekli", description: "Önce giriş yapmalısınız.", variant: "destructive" });
       return;
     }
-    const token = crypto.randomUUID();
-    const { error } = await supabase.from("invites").insert({
-      token,
-      max_uses: Number.isFinite(maxUses) ? maxUses : 0,
-      owner_user_id: user.id,
-    });
-    if (error) {
-      toast({ title: "Davet oluşturulamadı", description: error.message, variant: "destructive" });
+
+    if (!inviterId) {
+      toast({ title: "Davet oluşturulamadı", description: "Davet oluşturulamadı: Daveti gönderen kişi ağda bulunmuyor.", variant: "destructive" });
       return;
     }
+
+    const { data, error } = await supabase.functions.invoke("invite-create", {
+      body: {
+        inviter_contact_id: inviterId,
+        max_uses: Number.isFinite(maxUses) ? maxUses : 0,
+      },
+    });
+
+    if (error) {
+      toast({ title: "Davet oluşturulamadı", description: error.message || "Bilinmeyen hata", variant: "destructive" });
+      return;
+    }
+
+    const token = (data as any)?.token as string;
     const url = `${window.location.origin}/invite/${token}`;
     setLink(url);
     await navigator.clipboard.writeText(url).catch(() => {});
@@ -56,6 +83,19 @@ const InviteButtonInline = () => {
           <DialogTitle>Davetiye Bağlantısı Oluştur</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Daveti gönderen kişi</Label>
+            <Select value={inviterId} onValueChange={setInviterId}>
+              <SelectTrigger aria-label="Daveti göndereni seçin">
+                <SelectValue placeholder="Kişi seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                {contacts.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label>Kullanım limiti (0 = sınırsız)</Label>
             <Input

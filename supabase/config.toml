@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.invite-inviter]
 verify_jwt = false
+
+[functions.invite-create]
+verify_jwt = false
