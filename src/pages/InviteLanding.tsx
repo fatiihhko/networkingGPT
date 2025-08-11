@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ContactForm } from "@/components/network/ContactForm";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,6 +41,10 @@ const InviteLanding = () => {
   const { token } = useParams();
 const [lookup, setLookup] = useState<InviteLookupResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inviter, setInviter] = useState({ first_name: "", last_name: "", email: "" });
+  const [stepOneDone, setStepOneDone] = useState(false);
+  const [resolvedParentId, setResolvedParentId] = useState<string | undefined>(undefined);
+  const [submitting, setSubmitting] = useState(false);
 
   const baseUrl = useMemo(() => window.location.origin, []);
 
@@ -69,6 +76,31 @@ useEffect(() => {
 
 // Invite mode handles email sending and usage on the server via Edge Function
 
+  const handleInviterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-inviter", {
+        body: { token, inviter },
+      });
+      if (error) {
+        toast({ title: "Hata", description: error.message, variant: "destructive" });
+        return;
+      }
+      const parentId = (data as any)?.parent_contact_id as string | undefined;
+      if (parentId) {
+        setResolvedParentId(parentId);
+        setStepOneDone(true);
+        toast({ title: "Onaylandı", description: "Daveti gönderen kaydedildi." });
+      }
+    } catch (err: any) {
+      toast({ title: "Hata", description: err?.message || "Bilinmeyen hata", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const exhausted = !!lookup?.exhausted;
 
   return (
@@ -78,22 +110,46 @@ useEffect(() => {
         <p className="text-muted-foreground">Bu sayfadan sadece kişi ekleme işlemi yapılabilir.</p>
       </header>
       <Card className="p-4 md:p-6">
-{loading && <div>Yükleniyor…</div>}
+        {loading && <div>Yükleniyor…</div>}
         {!loading && (!lookup || !lookup.valid) && (
           <div>
-            Geçersiz davet bağlantısı. Lütfen yöneticinizle iletişime geçin.
-            {" "}
+            Geçersiz bağlantı. Lütfen yöneticinizle iletişime geçin. {" "}
             <Link className="underline" to="/auth">Giriş yap</Link>
           </div>
         )}
         {!loading && lookup && exhausted && (
-          <div>Bu davet bağlantısının kullanım hakkı dolmuştur.</div>
+          <div>Kullanım sınırına ulaşıldı.</div>
         )}
-        {!loading && lookup && !exhausted && (
-          <ContactForm
-            parentContactId={lookup.parent_contact_id || undefined}
-            inviteToken={token}
-          />
+        {!loading && lookup && !exhausted && !stepOneDone && (
+          <section aria-labelledby="step1" className="space-y-4">
+            <h2 id="step1" className="text-xl font-medium">Adım 1 — Daveti Gönderen</h2>
+            <form onSubmit={handleInviterSubmit} className="grid gap-4 md:grid-cols-3">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="first_name">Ad</Label>
+                <Input id="first_name" required value={inviter.first_name} onChange={(e) => setInviter({ ...inviter, first_name: e.target.value })} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="last_name">Soyad</Label>
+                <Input id="last_name" required value={inviter.last_name} onChange={(e) => setInviter({ ...inviter, last_name: e.target.value })} />
+              </div>
+              <div className="flex flex-col gap-2 md:col-span-1">
+                <Label htmlFor="email">E-posta</Label>
+                <Input id="email" type="email" required value={inviter.email} onChange={(e) => setInviter({ ...inviter, email: e.target.value })} />
+              </div>
+              <div className="md:col-span-3">
+                <Button type="submit" disabled={submitting}>{submitting ? "Gönderiliyor..." : "Devam Et"}</Button>
+              </div>
+            </form>
+          </section>
+        )}
+        {!loading && lookup && !exhausted && stepOneDone && (
+          <section aria-labelledby="step2" className="space-y-2">
+            <h2 id="step2" className="text-xl font-medium">Adım 2 — Kişi Ekle</h2>
+            <ContactForm
+              parentContactId={resolvedParentId}
+              inviteToken={token}
+            />
+          </section>
         )}
       </Card>
     </main>

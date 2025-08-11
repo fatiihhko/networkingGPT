@@ -80,29 +80,41 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          inviter_email: string | null
+          inviter_first_name: string | null
+          inviter_last_name: string | null
           max_uses: number
           owner_user_id: string
           parent_contact_id: string | null
+          status: string
           token: string
-          uses: number
+          uses_count: number
         }
         Insert: {
           created_at?: string
           id?: string
+          inviter_email?: string | null
+          inviter_first_name?: string | null
+          inviter_last_name?: string | null
           max_uses?: number
           owner_user_id: string
           parent_contact_id?: string | null
+          status?: string
           token: string
-          uses?: number
+          uses_count?: number
         }
         Update: {
           created_at?: string
           id?: string
+          inviter_email?: string | null
+          inviter_first_name?: string | null
+          inviter_last_name?: string | null
           max_uses?: number
           owner_user_id?: string
           parent_contact_id?: string | null
+          status?: string
           token?: string
-          uses?: number
+          uses_count?: number
         }
         Relationships: [
           {

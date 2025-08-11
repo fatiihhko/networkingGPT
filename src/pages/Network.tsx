@@ -20,10 +20,7 @@ interface SimpleContact { id: string; first_name: string; last_name: string }
 
 const InviteButtonInline = () => {
   const [open, setOpen] = useState(false);
-  const [contacts, setContacts] = useState<SimpleContact[]>([]);
-  const [parentId, setParentId] = useState<string | undefined>(undefined);
-  const [maxUses, setMaxUses] = useState<number>(1);
-  const [unlimited, setUnlimited] = useState<boolean>(false);
+  const [maxUses, setMaxUses] = useState<number>(0);
   const [link, setLink] = useState<string>("");
 
   useEffect(() => {

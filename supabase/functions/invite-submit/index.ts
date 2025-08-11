@@ -52,7 +52,7 @@ serve(async (req: Request) => {
     // Load invite
     const { data: invite, error: invErr } = await admin
       .from("invites")
-      .select("id, uses, max_uses, owner_user_id, parent_contact_id")
+      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, status")
       .eq("token", token)
       .maybeSingle();
     if (invErr) throw invErr;
@@ -63,8 +63,10 @@ serve(async (req: Request) => {
       });
     }
 
-    // Allow unlimited usage when max_uses is 0
-    if ((invite.max_uses ?? 0) > 0 && invite.uses >= invite.max_uses) {
+    // Validate status and usage limits
+    const unlimited = (invite.max_uses ?? 0) === 0;
+    const exhausted = invite.status !== 'active' ? true : (unlimited ? false : invite.uses_count >= invite.max_uses);
+    if (exhausted) {
       return new Response(JSON.stringify({ error: "Davet kullanım hakkı dolmuş" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -88,7 +90,7 @@ serve(async (req: Request) => {
       .from("contacts")
       .insert({
         user_id: invite.owner_user_id,
-        parent_contact_id: contact.parent_contact_id ?? invite.parent_contact_id ?? null,
+        parent_contact_id: invite.parent_contact_id ?? null,
         first_name: contact.first_name,
         last_name: contact.last_name,
         city: contact.city ?? null,
@@ -105,12 +107,19 @@ serve(async (req: Request) => {
 
     if (insErr) throw insErr;
 
-    // Increment uses (non-atomic but sufficient for typical use)
-    const { error: updErr } = await admin
-      .from("invites")
-      .update({ uses: (invite.uses ?? 0) + 1 })
-      .eq("id", invite.id);
-    if (updErr) console.error("Failed to increment invite uses", updErr);
+    // Increment uses_count for limited invites and revoke if limit reached
+    if (!unlimited) {
+      const nextCount = (invite.uses_count ?? 0) + 1;
+      const updatePayload: Record<string, any> = { uses_count: nextCount };
+      if (nextCount >= (invite.max_uses ?? 0)) {
+        updatePayload.status = 'revoked';
+      }
+      const { error: updErr } = await admin
+        .from("invites")
+        .update(updatePayload)
+        .eq("id", invite.id);
+      if (updErr) console.error("Failed to update invite usage", updErr);
+    }
 
     // Optional email
     if (sendEmail && contact.email) {

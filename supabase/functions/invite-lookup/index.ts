@@ -31,7 +31,7 @@ serve(async (req: Request) => {
 
     const { data: invite, error } = await admin
       .from("invites")
-      .select("id, uses, max_uses, parent_contact_id")
+      .select("id, uses_count, max_uses, parent_contact_id, status")
       .eq("token", token)
       .maybeSingle();
 
@@ -45,8 +45,8 @@ serve(async (req: Request) => {
     }
 
     const unlimited = (invite.max_uses ?? 0) === 0;
-    const exhausted = unlimited ? false : invite.uses >= invite.max_uses;
-    const remaining = unlimited ? null : Math.max(0, invite.max_uses - invite.uses);
+    const exhausted = invite.status !== 'active' ? true : (unlimited ? false : invite.uses_count >= invite.max_uses);
+    const remaining = unlimited ? null : Math.max(0, invite.max_uses - invite.uses_count);
 
     return new Response(
       JSON.stringify({
