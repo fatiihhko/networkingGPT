@@ -154,20 +154,14 @@ serve(async (req: Request) => {
 
         const base = (base_url || '').replace(/\/$/, '');
         const newInviteLink = base + `/invite/${newToken}`;
-        const limitMax = FOLLOW_UP_MAX_USES_DEFAULT;
-        const limitText = limitMax === 0
-          ? "Sınırsız kullanım"
-          : `Kullanım limiti: ${limitMax} kişi`;
 
         await resend.emails.send({
           from: "Lovable <onboarding@resend.dev>",
           to: [contact.email],
-          subject: `${inviterFullName} sizi Network GPT'de ağına ekledi`,
+          subject: "Network GPT Davetiyesi",
           html: `
-            <p><strong>${inviterFullName}</strong> sizi Network GPT’de ağına ekledi.</p>
-            <p>Siz de başkalarını eklemek isterseniz aşağıdaki bağlantıyı kullanabilirsiniz:</p>
+            <p><strong>${inviterFullName}</strong> sizi Networking GPT ağına ekledi. Eğer siz de başkalarını eklemek isterseniz aşağıdaki davet bağlantısını kullanabilirsiniz.</p>
             <p><a href="${newInviteLink}">${newInviteLink}</a></p>
-            <p>${limitText}</p>
           `,
         });
       } catch (mailErr) {
