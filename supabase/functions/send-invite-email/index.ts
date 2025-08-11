@@ -31,21 +31,18 @@ serve(async (req: Request) => {
 
     const inviteLink = token ? `${(base_url || '').replace(/\/$/, '')}/invite/${token}` : null;
 
-   const html = `
-  <h2>Network GPT'ye hoş geldiniz${name ? ", " + name : ""}!</h2>
-  <p><strong>${inviterName}</strong> sizi ağına ekledi.</p>
-  ${inviteLink ? `
-    <p>Kendi ağınızı oluşturmak için davet bağlantısını kullanabilirsiniz:</p>
-    <p><a href="${inviteLink}">${inviteLink}</a></p>
-  ` : ''}
-`;
+    const html = `
+      <h2>Network GPT'ye hoş geldiniz${name ? ", " + name : ""}!</h2>
+      <p>Ağınıza eklendiğiniz için teşekkürler. Sorunuz olursa bu e-postaya yanıt verebilirsiniz.</p>
+      ${inviteLink ? `<p>Başkalarını eklemek için davet bağlantısı: <a href="${inviteLink}">${inviteLink}</a></p>` : ''}
+    `;
 
-const result = await resend.emails.send({
-  from: "Network GPT <no-reply@networkgpt.com>",
-  to: [email],
-  subject: "Network GPT Daveti",
-  html,
-});
+    const result = await resend.emails.send({
+      from: "Lovable <onboarding@resend.dev>",
+      to: [email],
+      subject: "Network GPT Bilgilendirme",
+      html,
+    });
 
     return new Response(JSON.stringify(result), {
       status: 200,
