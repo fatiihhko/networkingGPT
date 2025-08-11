@@ -172,7 +172,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
 {inviteToken && (
   <div className="flex items-center gap-2 md:col-span-2">
     <Checkbox id="sendEmail" checked={sendEmail} onCheckedChange={(v) => setSendEmail(!!v)} />
-    <Label htmlFor="sendEmail">Bilgilendirme e-postası gönderilsin mi?</Label>
+    <Label htmlFor="sendEmail">Bu kişiye e-posta gönderilsin mi?</Label>
   </div>
 )}
 <div className="md:col-span-2">

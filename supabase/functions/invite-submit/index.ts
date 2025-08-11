@@ -52,7 +52,7 @@ serve(async (req: Request) => {
     // Load invite
     const { data: invite, error: invErr } = await admin
       .from("invites")
-      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, status")
+      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, status, inviter_first_name, inviter_last_name, inviter_email")
       .eq("token", token)
       .maybeSingle();
     if (invErr) throw invErr;
@@ -124,16 +124,41 @@ serve(async (req: Request) => {
     // Optional email
     if (sendEmail && contact.email) {
       try {
-        const inviteLink = `${(base_url || '').replace(/\/$/, '')}/invite/${token}`;
+        // Create a fresh invite tied to the inviter (parent_contact_id)
+        const newToken = crypto.randomUUID();
+        const { error: newInvErr } = await admin
+          .from("invites")
+          .insert({
+            token: newToken,
+            owner_user_id: invite.owner_user_id,
+            parent_contact_id: invite.parent_contact_id ?? null,
+            max_uses: invite.max_uses ?? 0,
+            inviter_first_name: (invite as any).inviter_first_name ?? null,
+            inviter_last_name: (invite as any).inviter_last_name ?? null,
+            inviter_email: (invite as any).inviter_email ?? null,
+          });
+        if (newInvErr) throw newInvErr;
+
+        const inviterFullName = [
+          (invite as any).inviter_first_name,
+          (invite as any).inviter_last_name,
+        ].filter(Boolean).join(" ") || "Bir davet eden";
+
+        const base = (base_url || '').replace(/\/$/, '');
+        const newInviteLink = base + `/invite/${newToken}`;
+        const limitText = (invite.max_uses ?? 0) === 0
+          ? "Sınırsız kullanım"
+          : `Kullanım limiti: ${invite.max_uses}`;
+
         await resend.emails.send({
           from: "Lovable <onboarding@resend.dev>",
           to: [contact.email],
-          subject: "Network GPT Bilgilendirme",
+          subject: "Networking GPT Davet Bağlantınız",
           html: `
-            <h2>Network GPT'ye hoş geldiniz${contact.first_name ? ", " + contact.first_name : ""}!</h2>
-            <p>Ağınıza eklendiğiniz için teşekkürler. Sorunuz olursa bu e-postaya yanıt verebilirsiniz.</p>
-            <p>Başkalarını eklemek için bu davet bağlantısını kullanabilirsiniz:</p>
-            <p><a href="${inviteLink}">${inviteLink}</a></p>
+            <p>${inviterFullName} sizi Networking GPT'de ağına ekledi.</p>
+            <p>Eğer siz de başkalarını eklemek isterseniz aşağıdaki bağlantıyı kullanabilirsiniz:</p>
+            <p><a href="${newInviteLink}">${newInviteLink}</a></p>
+            <p>${limitText}</p>
           `,
         });
       } catch (mailErr) {
