@@ -30,9 +30,9 @@ serve(async (req: Request) => {
     console.log("Request method:", req.method);
     console.log("Content-Type:", req.headers.get("content-type"));
     
-    // Validate Content-Type
+    // Validate Content-Type (case-insensitive)
     const contentType = req.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
+    if (!contentType || !contentType.toLowerCase().includes("application/json")) {
       console.log("Invalid Content-Type:", contentType);
       return new Response(
         JSON.stringify({ error: "Content-Type must be application/json" }),

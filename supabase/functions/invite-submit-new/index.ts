@@ -38,9 +38,9 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Content-Type koruması (istek json değilse)
+    // More flexible Content-Type checking
     const ct = req.headers.get("content-type") || "";
-    if (!ct.includes("application/json")) {
+    if (!ct.toLowerCase().includes("application/json")) {
       return new Response(JSON.stringify({ error: "İstek JSON olmalı (application/json)" }), {
         status: 415,
         headers: { "Content-Type": "application/json", ...corsHeaders },
