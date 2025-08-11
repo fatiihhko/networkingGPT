@@ -91,6 +91,22 @@ serve(async (req: Request) => {
 
     // RPC çağrısı — parametre isimleri Postgres fonksiyon imzasıyla bire bir eşleşmeli
     // Burada p_token + p_contact beklediğini varsayıyoruz.
+    console.log("Calling accept_invite_and_add_contact with:", {
+      p_token: token,
+      p_contact: {
+        first_name: contact.first_name,
+        last_name: contact.last_name,
+        city: contact.city ?? null,
+        profession: contact.profession ?? null,
+        relationship_degree: contact.relationship_degree,
+        services,
+        tags,
+        phone: contact.phone ?? null,
+        email: contact.email ?? null,
+        description: contact.description ?? null,
+      },
+    });
+
     const { data: rpcData, error: rpcError } = await admin.rpc("accept_invite_and_add_contact", {
       p_token: token,
       p_contact: {
@@ -106,6 +122,8 @@ serve(async (req: Request) => {
         description: contact.description ?? null,
       },
     });
+
+    console.log("RPC result:", { rpcData, rpcError });
 
     if (rpcError) {
       const msg = rpcError.message || "İşlem gerçekleştirilemedi";
