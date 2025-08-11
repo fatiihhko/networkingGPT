@@ -36,31 +36,23 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log("Looking up invite with token:", token);
-    
-    // Load invite with chain information - fix ambiguous column references
+    // Load invite with chain information
     const { data: invite, error: invErr } = await admin
       .from("invites")
       .select(`
         id, 
         uses_count, 
-        invites.max_uses, 
+        max_uses, 
         owner_user_id, 
         parent_contact_id, 
-        invites.status, 
+        status, 
         inviter_email, 
         inviter_contact_id,
         chain_id,
-        invite_chains!inner(
-          max_uses:invite_chains.max_uses, 
-          remaining_uses:invite_chains.remaining_uses, 
-          status:invite_chains.status
-        )
+        invite_chains!inner(max_uses, remaining_uses, status)
       `)
       .eq("token", token)
       .maybeSingle();
-      
-    console.log("Invite lookup result:", { invite, error: invErr });
 
     if (invErr) throw invErr;
     if (!invite) {
@@ -72,13 +64,9 @@ serve(async (req: Request) => {
 
     // Validate status and usage limits (do not increment here)
     const chain = invite.invite_chains;
-    console.log("Chain validation:", { chain, inviteStatus: invite.status });
-    
     const unlimited = (chain.max_uses ?? 0) === 0;
     const exhausted = invite.status !== 'active' || chain.status !== 'active' ||
                      (!unlimited && (chain.remaining_uses ?? 0) <= 0);
-    
-    console.log("Validation result:", { unlimited, exhausted });
     if (exhausted) {
       return new Response(JSON.stringify({ error: "Bu davet bağlantısının kullanım hakkı dolmuş." }), {
         status: 400,
@@ -91,19 +79,12 @@ serve(async (req: Request) => {
 
     if (!inviter_contact_id) {
       // Find existing contact by email for the invite owner (case-insensitive)
-      console.log("Searching for inviter contact:", { 
-        owner_user_id: invite.owner_user_id, 
-        inviter_email: inviter.email 
-      });
-      
       const { data: existing, error: findErr } = await admin
         .from("contacts")
-        .select("id, first_name, last_name, email")
+        .select("id, first_name, last_name")
         .eq("user_id", invite.owner_user_id)
         .ilike("email", inviter.email)
         .limit(1);
-        
-      console.log("Contact search result:", { existing, error: findErr });
 
       if (findErr) throw findErr;
 
