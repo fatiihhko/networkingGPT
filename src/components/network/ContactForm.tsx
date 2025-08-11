@@ -46,34 +46,48 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
 
   // If inviteToken exists, submit via Edge Function (no auth required)
   if (inviteToken) {
-    const { data, error } = await supabase.functions.invoke("invite-submit-new", {
-      body: {
-        token: inviteToken,
-        sendEmail,
-        base_url: window.location.origin,
-        contact: {
-          first_name: values.first_name,
-          last_name: values.last_name,
-          city: values.city,
-          profession: values.profession,
-          relationship_degree: values.relationship_degree,
-          services: servicesArr,
-          tags: tagsArr,
-          phone: values.phone,
-          email: values.email || null,
-          description: values.description,
-          parent_contact_id: parentContactId ?? null,
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-submit-new`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
         },
-      },
-    });
+        body: JSON.stringify({
+          token: inviteToken,
+          sendEmail,
+          base_url: window.location.origin,
+          contact: {
+            first_name: values.first_name,
+            last_name: values.last_name,
+            city: values.city,
+            profession: values.profession,
+            relationship_degree: values.relationship_degree,
+            services: servicesArr,
+            tags: tagsArr,
+            phone: values.phone,
+            email: values.email || null,
+            description: values.description,
+            parent_contact_id: parentContactId ?? null,
+          },
+        })
+      });
 
-    if (error) {
-      toast({ title: "Kaydedilemedi", description: error.message, variant: "destructive" });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen hata' }));
+        toast({ title: "Kaydedilemedi", description: errorData.error || `HTTP ${response.status}`, variant: "destructive" });
+        return;
+      }
+
+      const data = await response.json();
+      
+      toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+      onSuccess?.(data?.contact ?? null, values);
+    } catch (error: any) {
+      toast({ title: "Kaydedilemedi", description: error.message || "Bilinmeyen hata", variant: "destructive" });
       return;
     }
-
-    toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
-    onSuccess?.(data?.contact ?? null, values);
     form.reset({
       first_name: "",
       last_name: "",

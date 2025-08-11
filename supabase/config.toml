@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.invite-submit]
 verify_jwt = false
 
+[functions.invite-submit-new]
+verify_jwt = false
+
 [functions.invite-inviter]
 verify_jwt = false
 

@@ -57,17 +57,29 @@ const [lookup, setLookup] = useState<InviteLookupResponse | null>(null);
   }, [baseUrl, token]);
 
 useEffect(() => {
-    const load = async () => {
+const load = async () => {
       if (!token) return;
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke("invite-lookup", {
-        body: { token },
-      });
-      if (error) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-lookup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ token })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        setLookup(data || null);
+      } catch (error: any) {
         toast({ title: "Davet yüklenemedi", description: error.message, variant: "destructive" });
         setLookup(null);
-      } else {
-        setLookup((data as any) || null);
       }
       setLoading(false);
     };
@@ -79,8 +91,23 @@ useEffect(() => {
     if (!token) return;
     if (!lookup?.valid || lookup.exhausted) return;
     const id = setInterval(async () => {
-      const { data } = await supabase.functions.invoke("invite-lookup", { body: { token } });
-      if (data) setLookup(data as any);
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-lookup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ token })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setLookup(data);
+        }
+      } catch (error) {
+        console.error('Interval lookup failed:', error);
+      }
     }, 5000);
     return () => clearInterval(id);
   }, [token, lookup?.valid, lookup?.exhausted]);
@@ -92,14 +119,24 @@ useEffect(() => {
     if (!token) return;
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invite-inviter", {
-        body: { token, inviter },
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-inviter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ token, inviter })
       });
-      if (error) {
-        toast({ title: "Hata", description: error.message, variant: "destructive" });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen hata' }));
+        toast({ title: "Hata", description: errorData.error || `HTTP ${response.status}`, variant: "destructive" });
         return;
       }
-      const parentId = (data as any)?.parent_contact_id as string | undefined;
+      
+      const data = await response.json();
+      const parentId = data?.parent_contact_id as string | undefined;
       if (parentId) {
         setResolvedParentId(parentId);
         setStepOneDone(true);
