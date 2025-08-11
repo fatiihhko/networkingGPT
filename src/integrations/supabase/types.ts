@@ -76,33 +76,8 @@ export type Database = {
           },
         ]
       }
-      invite_chains: {
-        Row: {
-          created_at: string
-          id: string
-          max_uses: number
-          remaining_uses: number
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          max_uses: number
-          remaining_uses: number
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          max_uses?: number
-          remaining_uses?: number
-          status?: string
-        }
-        Relationships: []
-      }
       invites: {
         Row: {
-          chain_id: string
           created_at: string
           id: string
           inviter_contact_id: string | null
@@ -117,7 +92,6 @@ export type Database = {
           uses_count: number
         }
         Insert: {
-          chain_id: string
           created_at?: string
           id?: string
           inviter_contact_id?: string | null
@@ -132,7 +106,6 @@ export type Database = {
           uses_count?: number
         }
         Update: {
-          chain_id?: string
           created_at?: string
           id?: string
           inviter_contact_id?: string | null
@@ -147,13 +120,6 @@ export type Database = {
           uses_count?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "invites_chain_id_fkey"
-            columns: ["chain_id"]
-            isOneToOne: false
-            referencedRelation: "invite_chains"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "invites_inviter_contact_id_fkey"
             columns: ["inviter_contact_id"]
@@ -175,14 +141,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      accept_invite_and_add_contact: {
-        Args: { p_token: string; p_contact: Json }
-        Returns: {
-          contact_id: string
-          remaining_uses: number
-          chain_status: string
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

@@ -46,7 +46,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
 
   // If inviteToken exists, submit via Edge Function (no auth required)
   if (inviteToken) {
-    const { data, error } = await supabase.functions.invoke("invite-submit-new", {
+    const { data, error } = await supabase.functions.invoke("invite-submit", {
       body: {
         token: inviteToken,
         sendEmail,

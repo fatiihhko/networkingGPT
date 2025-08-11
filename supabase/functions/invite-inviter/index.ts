@@ -36,27 +36,12 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log("Looking up invite with token:", token);
-    
-    // Load invite with chain information
+    // Load invite
     const { data: invite, error: invErr } = await admin
       .from("invites")
-      .select(`
-        id, 
-        uses_count, 
-        invites.max_uses, 
-        owner_user_id, 
-        parent_contact_id, 
-        invites.status, 
-        inviter_email, 
-        inviter_contact_id,
-        chain_id,
-        invite_chains!inner(max_uses:invite_chains.max_uses, remaining_uses:invite_chains.remaining_uses, status:invite_chains.status)
-      `)
+      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, status, inviter_email, inviter_contact_id")
       .eq("token", token)
       .maybeSingle();
-
-    console.log("Invite lookup result:", { invite, error: invErr });
 
     if (invErr) throw invErr;
     if (!invite) {
@@ -67,12 +52,10 @@ serve(async (req: Request) => {
     }
 
     // Validate status and usage limits (do not increment here)
-    const chain = invite.invite_chains;
-    const unlimited = (chain.max_uses ?? 0) === 0;
-    const exhausted = invite.status !== 'active' || chain.status !== 'active' ||
-                     (!unlimited && (chain.remaining_uses ?? 0) <= 0);
+    const unlimited = (invite.max_uses ?? 0) === 0;
+    const exhausted = invite.status !== 'active' ? true : (unlimited ? false : invite.uses_count >= invite.max_uses);
     if (exhausted) {
-      return new Response(JSON.stringify({ error: "Bu davet bağlantısının kullanım hakkı dolmuş." }), {
+      return new Response(JSON.stringify({ error: "Kullanım sınırına ulaşıldı" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -82,12 +65,12 @@ serve(async (req: Request) => {
     let inviter_contact_id = (invite as any).inviter_contact_id as string | null;
 
     if (!inviter_contact_id) {
-      // Find existing contact by email for the invite owner (case-insensitive)
+      // Find existing contact by email for the invite owner
       const { data: existing, error: findErr } = await admin
         .from("contacts")
         .select("id, first_name, last_name")
-        .eq("user_id", invite.owner_user_id)
-        .ilike("email", inviter.email)
+        .eq("user_id", (invite as any).owner_user_id)
+        .eq("email", inviter.email)
         .limit(1);
 
       if (findErr) throw findErr;
@@ -95,11 +78,10 @@ serve(async (req: Request) => {
       let inviterContactId: string | null = existing && existing.length > 0 ? existing[0].id : null;
 
       if (!inviterContactId) {
-        // Inviter email not found in network - block progression
-        return new Response(JSON.stringify({ error: "Bu e-posta adresi ağınızda kayıtlı değil. Lütfen önce bu kişiyi ağınıza ekleyin." }), {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+        return new Response(
+          JSON.stringify({ error: "Bu e-posta adresi ağınızda kayıtlı değil. Lütfen önce bu kişiyi ağınıza ekleyin." }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
       }
 
       inviter_contact_id = inviterContactId;
@@ -113,12 +95,12 @@ serve(async (req: Request) => {
           inviter_last_name: inviter.last_name,
           inviter_email: inviter.email,
         })
-        .eq("id", invite.id);
+        .eq("id", (invite as any).id);
 
       if (updErr) throw updErr;
     } else {
       // Ensure inviter's display fields are set at least once
-      if (!invite.inviter_email) {
+      if (!(invite as any).inviter_email) {
         const { error: updErr } = await admin
           .from("invites")
           .update({
@@ -126,7 +108,7 @@ serve(async (req: Request) => {
             inviter_last_name: inviter.last_name,
             inviter_email: inviter.email,
           })
-          .eq("id", invite.id);
+          .eq("id", (invite as any).id);
         if (updErr) throw updErr;
       }
     }

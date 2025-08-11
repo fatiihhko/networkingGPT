@@ -46,26 +46,11 @@ serve(async (req: Request) => {
     const token = crypto.randomUUID();
     const m = Number.isFinite(max_uses as number) && (max_uses as number) >= 0 ? (max_uses as number) : 0;
 
-    // Create a new invite chain
-    const { data: chain, error: chainError } = await admin
-      .from("invite_chains")
-      .insert({
-        max_uses: m,
-        remaining_uses: m,
-        status: 'active'
-      })
-      .select()
-      .single();
-
-    if (chainError) throw chainError;
-
-    // Create new invite linked to the chain
     const { error: insErr } = await admin
       .from("invites")
       .insert({
         token,
         owner_user_id: userData.user.id,
-        chain_id: chain.id,
         inviter_contact_id: null,
         max_uses: m,
       });
