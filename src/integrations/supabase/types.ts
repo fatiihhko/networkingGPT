@@ -80,6 +80,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          inviter_contact_id: string | null
           inviter_email: string | null
           inviter_first_name: string | null
           inviter_last_name: string | null
@@ -93,6 +94,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          inviter_contact_id?: string | null
           inviter_email?: string | null
           inviter_first_name?: string | null
           inviter_last_name?: string | null
@@ -106,6 +108,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          inviter_contact_id?: string | null
           inviter_email?: string | null
           inviter_first_name?: string | null
           inviter_last_name?: string | null
@@ -117,6 +120,13 @@ export type Database = {
           uses_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "invites_inviter_contact_id_fkey"
+            columns: ["inviter_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invites_parent_contact_id_fkey"
             columns: ["parent_contact_id"]

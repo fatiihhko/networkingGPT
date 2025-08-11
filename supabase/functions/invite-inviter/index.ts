@@ -39,7 +39,7 @@ serve(async (req: Request) => {
     // Load invite
     const { data: invite, error: invErr } = await admin
       .from("invites")
-      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, status, inviter_email")
+      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, status, inviter_email, inviter_contact_id")
       .eq("token", token)
       .maybeSingle();
 
@@ -61,15 +61,15 @@ serve(async (req: Request) => {
       });
     }
 
-    let parent_contact_id = invite.parent_contact_id as string | null;
+    // Resolve inviter_contact_id (contact representing the sender)
+    let inviter_contact_id = (invite as any).inviter_contact_id as string | null;
 
-    // If inviter is not already set on the invite, resolve and persist it
-    if (!invite.inviter_email) {
-      // Try to find existing contact by email for the invite owner
+    if (!inviter_contact_id) {
+      // Find existing contact by email for the invite owner
       const { data: existing, error: findErr } = await admin
         .from("contacts")
         .select("id, first_name, last_name")
-        .eq("user_id", invite.owner_user_id)
+        .eq("user_id", (invite as any).owner_user_id)
         .eq("email", inviter.email)
         .limit(1);
 
@@ -78,11 +78,11 @@ serve(async (req: Request) => {
       let inviterContactId: string | null = existing && existing.length > 0 ? existing[0].id : null;
 
       if (!inviterContactId) {
-        // Create minimal contact
+        // Create minimal contact for inviter
         const { data: inserted, error: insErr } = await admin
           .from("contacts")
           .insert({
-            user_id: invite.owner_user_id,
+            user_id: (invite as any).owner_user_id,
             parent_contact_id: null,
             first_name: inviter.first_name,
             last_name: inviter.last_name,
@@ -97,24 +97,38 @@ serve(async (req: Request) => {
         inviterContactId = inserted.id;
       }
 
-      parent_contact_id = inviterContactId;
+      inviter_contact_id = inviterContactId;
 
-      // Update invite with inviter info and resolved parent_contact_id
+      // Update invite with inviter info and inviter_contact_id
       const { error: updErr } = await admin
         .from("invites")
         .update({
-          parent_contact_id: parent_contact_id,
+          inviter_contact_id,
           inviter_first_name: inviter.first_name,
           inviter_last_name: inviter.last_name,
           inviter_email: inviter.email,
         })
-        .eq("id", invite.id);
+        .eq("id", (invite as any).id);
 
       if (updErr) throw updErr;
+    } else {
+      // Ensure inviter's display fields are set at least once
+      if (!(invite as any).inviter_email) {
+        const { error: updErr } = await admin
+          .from("invites")
+          .update({
+            inviter_first_name: inviter.first_name,
+            inviter_last_name: inviter.last_name,
+            inviter_email: inviter.email,
+          })
+          .eq("id", (invite as any).id);
+        if (updErr) throw updErr;
+      }
     }
 
+    // For compatibility, also return parent_contact_id equal to inviter_contact_id
     return new Response(
-      JSON.stringify({ ok: true, parent_contact_id }),
+      JSON.stringify({ ok: true, inviter_contact_id, parent_contact_id: inviter_contact_id }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (e: any) {

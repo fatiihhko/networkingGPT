@@ -52,7 +52,7 @@ serve(async (req: Request) => {
     // Load invite
     const { data: invite, error: invErr } = await admin
       .from("invites")
-      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, status, inviter_first_name, inviter_last_name, inviter_email")
+      .select("id, uses_count, max_uses, owner_user_id, parent_contact_id, inviter_contact_id, status, inviter_first_name, inviter_last_name, inviter_email")
       .eq("token", token)
       .maybeSingle();
     if (invErr) throw invErr;
@@ -90,7 +90,7 @@ serve(async (req: Request) => {
       .from("contacts")
       .insert({
         user_id: invite.owner_user_id,
-        parent_contact_id: invite.parent_contact_id ?? null,
+        parent_contact_id: (invite as any).inviter_contact_id ?? null,
         first_name: contact.first_name,
         last_name: contact.last_name,
         city: contact.city ?? null,
@@ -124,18 +124,16 @@ serve(async (req: Request) => {
     // Optional email
     if (sendEmail && contact.email) {
       try {
-        // Create a fresh invite tied to the inviter (parent_contact_id)
+        // Create a fresh invite (T2) tied to the NEW contact as inviter
         const newToken = crypto.randomUUID();
+        const FOLLOW_UP_MAX_USES_DEFAULT = 0; // 0 = unlimited
         const { error: newInvErr } = await admin
           .from("invites")
           .insert({
             token: newToken,
-            owner_user_id: invite.owner_user_id,
-            parent_contact_id: invite.parent_contact_id ?? null,
-            max_uses: invite.max_uses ?? 0,
-            inviter_first_name: (invite as any).inviter_first_name ?? null,
-            inviter_last_name: (invite as any).inviter_last_name ?? null,
-            inviter_email: (invite as any).inviter_email ?? null,
+            owner_user_id: (invite as any).owner_user_id,
+            inviter_contact_id: (inserted as any).id,
+            max_uses: FOLLOW_UP_MAX_USES_DEFAULT,
           });
         if (newInvErr) throw newInvErr;
 
@@ -146,17 +144,18 @@ serve(async (req: Request) => {
 
         const base = (base_url || '').replace(/\/$/, '');
         const newInviteLink = base + `/invite/${newToken}`;
-        const limitText = (invite.max_uses ?? 0) === 0
+        const limitMax = FOLLOW_UP_MAX_USES_DEFAULT;
+        const limitText = limitMax === 0
           ? "Sınırsız kullanım"
-          : `Kullanım limiti: ${invite.max_uses}`;
+          : `Kullanım limiti: ${limitMax} kişi`;
 
         await resend.emails.send({
           from: "Lovable <onboarding@resend.dev>",
           to: [contact.email],
-          subject: "Networking GPT Davet Bağlantınız",
+          subject: `${inviterFullName} sizi Network GPT'de ağına ekledi`,
           html: `
-            <p>${inviterFullName} sizi Networking GPT'de ağına ekledi.</p>
-            <p>Eğer siz de başkalarını eklemek isterseniz aşağıdaki bağlantıyı kullanabilirsiniz:</p>
+            <p><strong>${inviterFullName}</strong> sizi Network GPT’de ağına ekledi.</p>
+            <p>Siz de başkalarını eklemek isterseniz aşağıdaki bağlantıyı kullanabilirsiniz:</p>
             <p><a href="${newInviteLink}">${newInviteLink}</a></p>
             <p>${limitText}</p>
           `,
