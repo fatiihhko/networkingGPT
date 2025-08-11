@@ -60,12 +60,17 @@ serve(async (req: Request) => {
     const services = toArray(contact.services);
     const tags = toArray(contact.tags);
 
+    console.log("Calling accept_invite_and_add_contact with:", {
+      token,
+      contact: { ...contact, services, tags }
+    });
+    
     // Use the transactional function to accept invite and add contact
     const { data: resultData, error: acceptError } = await admin.rpc(
       'accept_invite_and_add_contact',
       {
         p_token: token,
-        p_contact: {
+        p_contact: JSON.stringify({
           first_name: contact.first_name,
           last_name: contact.last_name,
           city: contact.city,
@@ -76,9 +81,11 @@ serve(async (req: Request) => {
           phone: contact.phone,
           email: contact.email,
           description: contact.description,
-        }
+        })
       }
     );
+    
+    console.log("RPC result:", { resultData, acceptError });
 
     if (acceptError) {
       // Handle specific Turkish error messages from the function
@@ -99,7 +106,11 @@ serve(async (req: Request) => {
         inviter_first_name,
         inviter_last_name,
         chain_id,
-        invite_chains!inner(remaining_uses, status)
+        invite_chains!inner(
+          remaining_uses:invite_chains.remaining_uses, 
+          status:invite_chains.status,
+          max_uses:invite_chains.max_uses
+        )
       `)
       .eq("token", token)
       .single();
@@ -111,7 +122,7 @@ serve(async (req: Request) => {
         const chain = inviteData.invite_chains;
         
         // Only create follow-up if chain is still active and has remaining uses (or unlimited)
-        if (chain.status === 'active' && (chain.remaining_uses > 0 || inviteData.invite_chains.max_uses === 0)) {
+        if (chain.status === 'active' && (chain.remaining_uses > 0 || chain.max_uses === 0)) {
           const newToken = crypto.randomUUID();
           
           const { error: newInvErr } = await admin
