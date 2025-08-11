@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Network from "./pages/Network";
 import InviteLanding from "./pages/InviteLanding";
+import InviteLinkLanding from "./pages/InviteLinkLanding";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             }
           />
           <Route path="/invite/:token" element={<InviteLanding />} />
+          <Route path="/invite-link/:token" element={<InviteLinkLanding />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

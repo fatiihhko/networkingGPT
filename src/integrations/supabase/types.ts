@@ -100,6 +100,84 @@ export type Database = {
         }
         Relationships: []
       }
+      invite_links: {
+        Row: {
+          created_at: string
+          created_by_user_id: string
+          id: string
+          limit_count: number
+          name: string
+          status: string
+          token: string
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by_user_id: string
+          id?: string
+          limit_count?: number
+          name?: string
+          status?: string
+          token: string
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by_user_id?: string
+          id?: string
+          limit_count?: number
+          name?: string
+          status?: string
+          token?: string
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
+      invite_members: {
+        Row: {
+          contact_id: string | null
+          created_at: string
+          id: string
+          invite_link_id: string
+          inviter_user_id: string
+          member_email: string
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          invite_link_id: string
+          inviter_user_id: string
+          member_email: string
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          invite_link_id?: string
+          inviter_user_id?: string
+          member_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_members_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_members_invite_link_id_fkey"
+            columns: ["invite_link_id"]
+            isOneToOne: false
+            referencedRelation: "invite_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invites: {
         Row: {
           chain_id: string
@@ -181,6 +259,20 @@ export type Database = {
           contact_id: string
           remaining_uses: number
           chain_status: string
+        }[]
+      }
+      add_member_via_invite_link: {
+        Args: {
+          p_token: string
+          p_inviter_user_id: string
+          p_member_email: string
+          p_contact_data: Json
+        }
+        Returns: {
+          success: boolean
+          contact_id: string
+          remaining_slots: number
+          error_message: string
         }[]
       }
     }
