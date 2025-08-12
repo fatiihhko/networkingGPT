@@ -14,7 +14,7 @@ import { NetworkFlow } from "@/components/network/NetworkFlow";
 import { StatsBar } from "@/components/network/StatsBar";
 import { ContactsProvider } from "@/components/network/ContactsContext";
 import { AIAssistant } from "@/components/network/AIAssistant";
-import { UserPlus, List as ListIcon, Share2, Bot } from "lucide-react";
+import { UserPlus, List as ListIcon, Share2, Bot, LogOut } from "lucide-react";
 
 
 
@@ -91,6 +91,12 @@ const InviteButtonInline = () => {
 
 const Network = () => {
   const [activeTab, setActiveTab] = useState("add");
+  
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({ title: "Çıkış yapıldı", description: "Başarıyla çıkış yaptınız." });
+  };
+
   return (
     <main className="min-h-screen px-4 pt-6 pb-24 md:p-8">
       <header className="mb-6 flex items-center justify-between gap-3">
@@ -98,7 +104,13 @@ const Network = () => {
           <h1 className="text-3xl md:text-4xl font-semibold">Networking GPT</h1>
           <p className="text-muted-foreground">İç ağ yönetimi ve görselleştirme paneli</p>
         </div>
-        <InviteButtonInline />
+        <div className="flex items-center gap-2">
+          <InviteButtonInline />
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4" />
+            Çıkış
+          </Button>
+        </div>
       </header>
 
 
