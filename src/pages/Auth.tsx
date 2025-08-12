@@ -20,13 +20,9 @@ const Auth = () => {
   const { register, handleSubmit, setValue } = useForm<LoginForm>();
 
   useEffect(() => {
-    // İsteğe bağlı: örnek kimlik bilgilerini doldur
-    setValue("email", ADMIN_EMAIL);
-    setValue("password", "rooktech");
-
     // Her giriş denemesinde formu göstermek için mevcut oturumu kapat
     supabase.auth.signOut().catch(() => {});
-  }, [setValue]);
+  }, []);
 
   const onSubmit = async (values: LoginForm) => {
     if (values.email !== ADMIN_EMAIL) {
@@ -83,9 +79,17 @@ const Auth = () => {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md bg-card/80 backdrop-blur border border-border shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl">Yalnızca Yönetici Girişi</CardTitle>
-          <CardDescription>Paneli görmek için e-posta ve şifrenizle giriş yapın.</CardDescription>
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Networking GPT
+          </CardTitle>
+          <CardDescription className="text-base mt-2">
+            AI destekli akıllı ağ yönetimi platformu. Kişilerinizi organize edin, bağlantılarınızı güçlendirin.
+          </CardDescription>
+          <div className="mt-4 pt-4 border-t border-border">
+            <h3 className="text-lg font-semibold">Yönetici Girişi</h3>
+            <p className="text-sm text-muted-foreground">Paneli görmek için e-posta ve şifrenizle giriş yapın.</p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
