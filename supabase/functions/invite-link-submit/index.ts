@@ -103,6 +103,20 @@ serve(async (req: Request) => {
       });
     }
 
+    // Send info email to the newly added contact
+    try {
+      await admin.functions.invoke("invite-send-info-email", {
+        body: {
+          email: contact.email,
+          name: `${contact.first_name} ${contact.last_name}`,
+        },
+      });
+      console.log(`Info email sent to ${contact.email}`);
+    } catch (emailError) {
+      console.error("Failed to send info email:", emailError);
+      // Continue despite email failure - don't fail the whole operation
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
