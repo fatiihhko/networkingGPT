@@ -51,7 +51,7 @@ export const InviteLinkLanding = () => {
     }
   };
 
-  const handleContactSubmit = async (contactData: any) => {
+  const handleContactSubmit = async (contactData: any, sendEmail: boolean = false) => {
     if (!token || !linkInfo) return;
 
     setSubmitting(true);
@@ -60,6 +60,7 @@ export const InviteLinkLanding = () => {
         body: {
           token,
           contact: contactData,
+          sendEmail,
         },
       });
 
@@ -199,7 +200,8 @@ export const InviteLinkLanding = () => {
                   </p>
                 </div>
                 <ContactForm 
-                  onSuccess={(contact, values) => handleContactSubmit(values)}
+                  inviteToken={token}
+                  onSuccess={(contact, values, sendEmail) => handleContactSubmit(values, sendEmail)}
                 />
               </div>
             )}

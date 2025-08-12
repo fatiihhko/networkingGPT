@@ -29,7 +29,7 @@ export const ContactForm = ({
   inviteToken,
 }: {
   parentContactId?: string;
-  onSuccess?: (contact: any, values: z.infer<typeof schema>) => void;
+  onSuccess?: (contact: any, values: z.infer<typeof schema>, sendEmail?: boolean) => void;
   inviteToken?: string;
 }) => {
 const form = useForm<z.infer<typeof schema>>({
@@ -83,7 +83,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
       const data = await response.json();
       
       toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
-      onSuccess?.(data?.contact ?? null, values);
+      onSuccess?.(data?.contact ?? null, values, sendEmail);
     } catch (error: any) {
       toast({ title: "Kaydedilemedi", description: error.message || "Bilinmeyen hata", variant: "destructive" });
       return;

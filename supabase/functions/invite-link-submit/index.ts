@@ -12,6 +12,7 @@ const admin = createClient(supabaseUrl!, serviceRoleKey!);
 
 interface SubmitRequest {
   token: string;
+  sendEmail?: boolean;
   contact: {
     first_name: string;
     last_name: string;
@@ -33,7 +34,7 @@ serve(async (req: Request) => {
 
   try {
     const body: SubmitRequest = await req.json();
-    const { token, contact } = body;
+    const { token, contact, sendEmail = false } = body;
 
     // Get the authenticated user
     const authHeader = req.headers.get("authorization");
@@ -103,18 +104,20 @@ serve(async (req: Request) => {
       });
     }
 
-    // Send info email to the newly added contact
-    try {
-      await admin.functions.invoke("invite-send-info-email", {
-        body: {
-          email: contact.email,
-          name: `${contact.first_name} ${contact.last_name}`,
-        },
-      });
-      console.log(`Info email sent to ${contact.email}`);
-    } catch (emailError) {
-      console.error("Failed to send info email:", emailError);
-      // Continue despite email failure - don't fail the whole operation
+    // Send info email to the newly added contact if requested
+    if (sendEmail && contact.email) {
+      try {
+        await admin.functions.invoke("invite-send-info-email", {
+          body: {
+            email: contact.email,
+            name: `${contact.first_name} ${contact.last_name}`,
+          },
+        });
+        console.log(`Info email sent to ${contact.email}`);
+      } catch (emailError) {
+        console.error("Failed to send info email:", emailError);
+        // Continue despite email failure - don't fail the whole operation
+      }
     }
 
     return new Response(
