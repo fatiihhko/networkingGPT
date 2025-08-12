@@ -14,8 +14,7 @@ import { NetworkFlow } from "@/components/network/NetworkFlow";
 import { StatsBar } from "@/components/network/StatsBar";
 import { ContactsProvider } from "@/components/network/ContactsContext";
 import { AIAssistant } from "@/components/network/AIAssistant";
-import { InviteLinkManager } from "@/components/network/InviteLinkManager";
-import { UserPlus, List as ListIcon, Share2, Bot, Settings } from "lucide-react";
+import { UserPlus, List as ListIcon, Share2, Bot } from "lucide-react";
 
 
 
@@ -112,12 +111,11 @@ const Network = () => {
       <ContactsProvider>
         <Card className="p-4 md:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="hidden md:grid grid-cols-5 w-full">
+            <TabsList className="hidden md:grid grid-cols-4 w-full">
               <TabsTrigger value="add">Kişi Ekle</TabsTrigger>
               <TabsTrigger value="list">Ağ Listesi</TabsTrigger>
               <TabsTrigger value="map">Görsel Ağ Haritası</TabsTrigger>
               <TabsTrigger value="ai">Yapay Zeka Asistanı</TabsTrigger>
-              <TabsTrigger value="admin">Yönetim</TabsTrigger>
             </TabsList>
             <TabsContent value="add">
               <ContactForm />
@@ -131,16 +129,13 @@ const Network = () => {
             <TabsContent value="ai">
               <AIAssistant />
             </TabsContent>
-            <TabsContent value="admin">
-              <InviteLinkManager />
-            </TabsContent>
           </Tabs>
         </Card>
       </ContactsProvider>
 
       {/* Alt mobil gezinme çubuğu */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-4">
           <button
             type="button"
             onClick={() => setActiveTab("add")}
@@ -180,16 +175,6 @@ const Network = () => {
           >
             <Bot className="h-5 w-5" />
             <span className="text-xs">Asistan</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("admin")}
-            aria-label="Yönetim"
-            aria-current={activeTab === "admin"}
-            className={`h-16 w-full flex flex-col items-center justify-center gap-1 ${activeTab === "admin" ? "text-primary" : "text-muted-foreground"} hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
-          >
-            <Settings className="h-5 w-5" />
-            <span className="text-xs">Yönetim</span>
           </button>
         </div>
       </nav>
