@@ -173,23 +173,27 @@ serve(async (req: Request) => {
 
     if (rpcError) {
       const msg = rpcError.message || "İşlem gerçekleştirilemedi";
+      console.error("RPC error:", msg);
       // Bilinen iş kuralı hatalarını 422 döndür
       const isBiz =
-        /doğrulanmadı|inviter_contact_id|null|zincir|limit|kısıt/i.test(msg);
+        /doğrulanmadı|inviter_contact_id|null|zincir|limit|kısıt|Geçersiz|kullanım hakkı|doğrulanmadı/i.test(msg);
       return new Response(JSON.stringify({ error: msg }), {
         status: isBiz ? 422 : 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Fonksiyon dönüşü array/obj olabilir — güvenli ayrıştır
-    const result = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    // Fonksiyon TABLE döndürür - ilk satırı al
+    const result = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : null;
     if (!result || !result.contact_id) {
+      console.error("Unexpected RPC result structure:", rpcData);
       return new Response(JSON.stringify({ error: "Beklenmeyen dönüş yapısı" }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    console.log("Contact created successfully:", result);
 
     const insertedContactId: string = result.contact_id;
 
