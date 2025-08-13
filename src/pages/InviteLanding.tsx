@@ -261,72 +261,69 @@ const load = async () => {
 
               <form onSubmit={handleInviterSubmit} className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
-                  <Card className="interactive-card p-4">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2 font-medium">
-                        <User className="h-4 w-4 text-primary" />
-                        Ad
-                      </Label>
-                      <Input
-                        id="first_name"
-                        name="first_name"
-                        type="text"
-                        required
-                        value={inviter.first_name}
-                        onChange={(e) => {
-                          console.log("First name changed:", e.target.value);
-                          setInviter({ ...inviter, first_name: e.target.value });
-                        }}
-                        placeholder="Adınız"
-                        autoComplete="given-name"
-                      />
-                    </div>
-                  </Card>
-
-                  <Card className="interactive-card p-4">
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2 font-medium">
-                        <User className="h-4 w-4 text-primary" />
-                        Soyad
-                      </Label>
-                      <Input
-                        id="last_name"
-                        name="last_name"
-                        type="text"
-                        required
-                        value={inviter.last_name}
-                        onChange={(e) => {
-                          console.log("Last name changed:", e.target.value);
-                          setInviter({ ...inviter, last_name: e.target.value });
-                        }}
-                        placeholder="Soyadınız"
-                        autoComplete="family-name"
-                      />
-                    </div>
-                  </Card>
-                </div>
-
-                <Card className="interactive-card p-4">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2 font-medium">
-                      <Mail className="h-4 w-4 text-primary" />
-                      E-posta Adresi
+                      <User className="h-4 w-4 text-primary" />
+                      Ad
                     </Label>
                     <Input
-                      id="email"
-                      name="email"
-                      type="email"
+                      id="first_name"
+                      name="first_name"
+                      type="text"
                       required
-                      value={inviter.email}
+                      value={inviter.first_name}
                       onChange={(e) => {
-                        console.log("Email changed:", e.target.value);
-                        setInviter({ ...inviter, email: e.target.value });
+                        console.log("First name changed:", e.target.value);
+                        setInviter({ ...inviter, first_name: e.target.value });
                       }}
-                      placeholder="e-posta@ornek.com"
-                      autoComplete="email"
+                      placeholder="Adınız"
+                      autoComplete="given-name"
+                      style={{ pointerEvents: 'auto', zIndex: 10 }}
                     />
                   </div>
-                </Card>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 font-medium">
+                      <User className="h-4 w-4 text-primary" />
+                      Soyad
+                    </Label>
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      type="text"
+                      required
+                      value={inviter.last_name}
+                      onChange={(e) => {
+                        console.log("Last name changed:", e.target.value);
+                        setInviter({ ...inviter, last_name: e.target.value });
+                      }}
+                      placeholder="Soyadınız"
+                      autoComplete="family-name"
+                      style={{ pointerEvents: 'auto', zIndex: 10 }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 font-medium">
+                    <Mail className="h-4 w-4 text-primary" />
+                    E-posta Adresi
+                  </Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    value={inviter.email}
+                    onChange={(e) => {
+                      console.log("Email changed:", e.target.value);
+                      setInviter({ ...inviter, email: e.target.value });
+                    }}
+                    placeholder="e-posta@ornek.com"
+                    autoComplete="email"
+                    style={{ pointerEvents: 'auto', zIndex: 10 }}
+                  />
+                </div>
 
                 <div className="text-center pt-4">
                   <Button 
