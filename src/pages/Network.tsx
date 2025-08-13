@@ -13,7 +13,7 @@ import { ContactList } from "@/components/network/ContactList";
 import { NetworkFlow } from "@/components/network/NetworkFlow";
 
 
-import { StatsBar } from "@/components/network/StatsBar";
+
 import { ContactsProvider } from "@/components/network/ContactsContext";
 import { AIAssistant } from "@/components/network/AIAssistant";
 import { UserPlus, List as ListIcon, Share2, Bot, LogOut, Sparkles } from "lucide-react";
@@ -131,11 +131,6 @@ const Network = () => {
       </header>
 
 
-      <div className="mb-6 slide-in">
-        <Card className="modern-card p-4 md:p-6 hover-lift">
-          <StatsBar />
-        </Card>
-      </div>
 
       <ContactsProvider>
         {/* Desktop mythology cards */}

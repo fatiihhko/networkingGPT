@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Mail, Phone, Building2, Users, Crown, UserCheck } from "lucide-react";
+import { StatsBar } from "./StatsBar";
 
 interface NetworkContact extends Contact {
   level: number;
@@ -317,7 +318,13 @@ export const NetworkFlow = () => {
   }
 
   return (
-    <div className="w-full h-[420px] md:h-[560px] relative">
+    <div className="space-y-4">
+      {/* Stats Bar - Görsel Ağ Haritası'nın üstünde */}
+      <Card className="modern-card p-4 hover-lift">
+        <StatsBar />
+      </Card>
+      
+      <div className="w-full h-[420px] md:h-[560px] relative">
              {/* Network Legend */}
        <div className="absolute top-4 left-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 text-xs">
          <div className="font-semibold mb-2">Ağ Haritası Açıklaması</div>
@@ -477,7 +484,93 @@ export const NetworkFlow = () => {
             )}
           </div>
         </div>
-      )}
+       )}
+      </div>
+
+      {/* Details Dialog */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="glass-dark max-w-md">
+          <DialogHeader>
+            <DialogTitle className="gradient-text">
+              {selectedContact?.first_name} {selectedContact?.last_name}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedContact && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span>{selectedContact.email || "E-posta yok"}</span>
+              </div>
+              
+              {selectedContact.phone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{selectedContact.phone}</span>
+                </div>
+              )}
+              
+              {selectedContact.city && (
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{selectedContact.city}</span>
+                </div>
+              )}
+              
+              {selectedContact.profession && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <span>{selectedContact.profession}</span>
+                </div>
+              )}
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Yakınlık Derecesi:</span>
+                <Badge variant="outline">
+                  {selectedContact.relationship_degree}/10
+                </Badge>
+              </div>
+              
+              {selectedContact.services?.length > 0 && (
+                <div>
+                  <div className="text-sm font-medium mb-2">Hizmetler</div>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedContact.services.map((service, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {service}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedContact.tags?.length > 0 && (
+                <div>
+                  <div className="text-sm font-medium mb-2">Etiketler</div>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedContact.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedContact.description && (
+                <div>
+                  <div className="text-sm font-medium mb-2">Notlar</div>
+                  <div className="text-sm bg-muted/50 p-3 rounded-lg">
+                    {selectedContact.description}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
