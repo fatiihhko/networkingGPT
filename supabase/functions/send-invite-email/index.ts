@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
@@ -6,7 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+const admin = createClient(supabaseUrl!, serviceRoleKey!);
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Resend API ile e-posta gönderme fonksiyonu
@@ -56,22 +61,79 @@ async function sendEmail(to: string, subject: string, html: string) {
   };
 }
 
+interface SendInviteEmailBody {
+  email: string;
+  message?: string;
+  senderName?: string;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { email, inviteLink, inviterName } = await req.json();
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization") || "";
+    const jwt = authHeader.replace("Bearer ", "");
+    if (!jwt) {
+      return new Response(
+        JSON.stringify({ error: "Giriş gerekli" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
-    if (!email || !inviteLink) {
-      return new Response(JSON.stringify({ error: "Email ve davet linki gerekli" }), {
+    const { data: userData, error: userErr } = await admin.auth.getUser(jwt);
+    if (userErr || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: "Giriş doğrulanamadı" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const { email, message, senderName } = await req.json() as SendInviteEmailBody;
+
+    if (!email) {
+      return new Response(JSON.stringify({ error: "Email gerekli" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const subject = "Network GPT Davetiyesi";
+    // Create an invite token
+    const token = crypto.randomUUID();
+    const maxUses = 0; // Unlimited
+
+    // Create a new invite chain
+    const { data: chain, error: chainError } = await admin
+      .from("invite_chains")
+      .insert({
+        max_uses: maxUses,
+        remaining_uses: maxUses,
+        status: 'active'
+      })
+      .select()
+      .single();
+
+    if (chainError) throw chainError;
+
+    // Create new invite linked to the chain
+    const { error: insErr } = await admin
+      .from("invites")
+      .insert({
+        token,
+        owner_user_id: userData.user.id,
+        chain_id: chain.id,
+        inviter_contact_id: null,
+        max_uses: maxUses,
+      });
+
+    if (insErr) throw insErr;
+
+    // Generate invite link
+    const inviteLink = `https://f3c88b06-c51d-4f94-b333-ab0ee9dfbdec.lovableproject.com/invite/${token}`;
+
+    const subject = "Network GPT Ağına Davetiyeniz";
     const html = `
       <!DOCTYPE html>
       <html lang="tr">
@@ -114,44 +176,16 @@ serve(async (req: Request) => {
             color: #4B5563;
             margin-bottom: 25px;
           }
-          .cta-button {
+          .invite-button {
             display: inline-block;
             background: linear-gradient(135deg, #8B5CF6, #7C3AED);
             color: white;
-            padding: 16px 32px;
+            padding: 15px 30px;
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
-            font-size: 16px;
-            margin: 25px 0;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-            transition: all 0.3s ease;
-          }
-          .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
-          }
-          .link-text {
-            background: #F3F4F6;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 14px;
-            color: #374151;
-          }
-          .footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #E5E7EB;
             text-align: center;
-            color: #6B7280;
-            font-size: 14px;
-          }
-          .highlight {
-            color: #8B5CF6;
-            font-weight: 600;
+            margin: 20px 0;
           }
           .features {
             background: #F3F4F6;
@@ -167,43 +201,69 @@ serve(async (req: Request) => {
             margin-bottom: 8px;
             color: #374151;
           }
+          .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+            text-align: center;
+            color: #6B7280;
+            font-size: 14px;
+          }
+          .highlight {
+            color: #8B5CF6;
+            font-weight: 600;
+          }
+          .message-box {
+            background: #EEF2FF;
+            border-left: 4px solid #8B5CF6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+          }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
             <div class="logo">🤖 Network GPT</div>
-            <h1 class="title">Özel Davetiyeniz</h1>
+            <h1 class="title">Profesyonel Ağına Davetlisiniz!</h1>
           </div>
           
           <div class="content">
             <p>Merhaba!</p>
             
-            <p><span class="highlight">${inviterName || "Bir arkadaşınız"}</span> sizi Network GPT platformuna davet ediyor.</p>
+            <p><span class="highlight">${senderName || "Bir arkadaşınız"}</span> sizi Network GPT profesyonel ağına davet ediyor.</p>
             
-            <div class="features">
-              <p><strong>Bu platform ile:</strong></p>
-              <ul>
-                <li>📊 Profesyonel ağınızı genişletebilirsiniz</li>
-                <li>👥 Bağlantılarınızı yönetebilirsiniz</li>
-                <li>🤖 AI destekli analizler yapabilirsiniz</li>
-                <li>📈 Ağınızın büyümesini takip edebilirsiniz</li>
-                <li>🔗 Yeni fırsatlar keşfedebilirsiniz</li>
-              </ul>
+            ${message ? `
+            <div class="message-box">
+              <strong>Kişisel Mesaj:</strong>
+              <p style="margin: 10px 0 0 0; font-style: italic;">"${message}"</p>
             </div>
+            ` : ''}
             
-            <div style="text-align: center;">
-              <a href="${inviteLink}" class="cta-button">
-                🚀 Davetiye Kabul Et
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${inviteLink}" class="invite-button">
+                🚀 Ağa Katıl
               </a>
             </div>
             
-            <p>Veya aşağıdaki linki kullanabilirsiniz:</p>
-            <div class="link-text">
-              ${inviteLink}
+            <div class="features">
+              <p><strong>Network GPT ile neler yapabilirsiniz:</strong></p>
+              <ul>
+                <li>👥 Profesyonel bağlantılarınızı organize edin</li>
+                <li>🌐 Ağınızı görselleştirin ve analiz edin</li>
+                <li>📊 AI destekli network analizleri yapın</li>
+                <li>🤝 Yeni fırsatlar keşfedin</li>
+                <li>📝 İletişim bilgilerinizi merkezi olarak yönetin</li>
+              </ul>
             </div>
             
-            <p><em>Bu davetiyenin süresi sınırlıdır. Hemen katılmak için yukarıdaki butona tıklayın!</em></p>
+            <p>Bu davet bağlantısı sadece sizin için oluşturulmuştur ve güvenlidir.</p>
+            
+            <p style="font-size: 14px; color: #6B7280;">
+              Eğer bağlantıya tıklayamıyorsanız, aşağıdaki URL'yi tarayıcınıza kopyalayın:<br>
+              <code style="background: #F3F4F6; padding: 5px; border-radius: 4px; word-break: break-all;">${inviteLink}</code>
+            </p>
           </div>
           
           <div class="footer">
@@ -220,7 +280,9 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'simulated' in result ? "Email simulated" : "Email sent successfully",
+        message: 'simulated' in result ? "Davet e-postası simülasyonu gönderildi" : "Davet e-postası başarıyla gönderildi",
+        inviteToken: token,
+        inviteLink: inviteLink,
         details: result
       }),
       { 
@@ -232,7 +294,7 @@ serve(async (req: Request) => {
     console.error("send-invite-email error:", error);
     return new Response(
       JSON.stringify({ 
-        error: "Email gönderilemedi", 
+        error: "Davet e-postası gönderilemedi", 
         details: error.message 
       }), 
       { 

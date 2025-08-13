@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Plus, Send, Users, ExternalLink } from "lucide-react";
+import { Copy, Plus, Send, Users, ExternalLink, Mail } from "lucide-react";
 
 interface InviteLink {
   id: string;
@@ -32,9 +33,13 @@ export const InviteLinkManager = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showMembersDialog, setShowMembersDialog] = useState(false);
   const [showSendEmailDialog, setShowSendEmailDialog] = useState(false);
+  const [showSendInviteDialog, setShowSendInviteDialog] = useState(false);
   const [newLinkName, setNewLinkName] = useState("");
   const [newLinkLimit, setNewLinkLimit] = useState(4);
   const [emailToSend, setEmailToSend] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
+  const [senderName, setSenderName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const fetchInviteLinks = async () => {
@@ -119,6 +124,33 @@ export const InviteLinkManager = () => {
     }
   };
 
+  const sendInviteEmail = async () => {
+    if (!inviteEmail) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-invite-email", {
+        body: {
+          email: inviteEmail,
+          message: inviteMessage,
+          senderName: senderName || undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Başarılı", description: "Davet e-postası gönderildi" });
+      setShowSendInviteDialog(false);
+      setInviteEmail("");
+      setInviteMessage("");
+      setSenderName("");
+    } catch (error: any) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const viewMembers = (link: InviteLink) => {
     setSelectedLink(link);
     fetchMembers(link.id);
@@ -137,6 +169,59 @@ export const InviteLinkManager = () => {
           <p className="text-muted-foreground">Limitli davet bağlantıları oluşturun ve yönetin</p>
         </div>
         <div className="flex gap-2">
+          <Dialog open={showSendInviteDialog} onOpenChange={setShowSendInviteDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Mail className="h-4 w-4 mr-2" />
+                Davet Gönder
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>E-posta ile Davet Gönder</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="inviteEmail">E-posta Adresi</Label>
+                  <Input
+                    id="inviteEmail"
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="ornek@email.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="senderName">Gönderen Adı (İsteğe bağlı)</Label>
+                  <Input
+                    id="senderName"
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    placeholder="Adınız"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="inviteMessage">Kişisel Mesaj (İsteğe bağlı)</Label>
+                  <Textarea
+                    id="inviteMessage"
+                    value={inviteMessage}
+                    onChange={(e) => setInviteMessage(e.target.value)}
+                    placeholder="Davetinizle birlikte gönderilecek kişisel mesaj..."
+                    rows={3}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowSendInviteDialog(false)}>
+                    İptal
+                  </Button>
+                  <Button onClick={sendInviteEmail} disabled={loading || !inviteEmail}>
+                    {loading ? "Gönderiliyor..." : "Davet Gönder"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={showSendEmailDialog} onOpenChange={setShowSendEmailDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">

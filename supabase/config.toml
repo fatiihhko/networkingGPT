@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.invite-create]
 verify_jwt = false
+
+[functions.send-invite-email]
+verify_jwt = true
+
+[functions.invite-send-info-email]
+verify_jwt = true
