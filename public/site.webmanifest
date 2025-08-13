@@ -1,0 +1,16 @@
+{
+  "name": "Networking GPT",
+  "short_name": "NetGPT",
+  "description": "AI destekli akıllı ağ yönetimi platformu",
+  "icons": [
+    {
+      "src": "/favicon.ico.avif",
+      "sizes": "any",
+      "type": "image/avif"
+    }
+  ],
+  "theme_color": "#8B5CF6",
+  "background_color": "#1E1B4B",
+  "display": "standalone",
+  "start_url": "/"
+}

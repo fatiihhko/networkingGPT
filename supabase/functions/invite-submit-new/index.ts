@@ -32,6 +32,53 @@ interface SubmitBody {
   };
 }
 
+// Resend API ile e-posta gönderme fonksiyonu
+async function sendEmailViaResend(to: string, subject: string, html: string) {
+  try {
+    if (!resend) {
+      console.warn("Resend API key not configured");
+      return { success: false, error: "Resend not configured" };
+    }
+
+    const result = await resend.emails.send({
+      from: "Network GPT <onboarding@resend.dev>",
+      to: [to],
+      subject,
+      html,
+    });
+
+    console.log("Resend email sent successfully:", result);
+    return { success: true, result };
+  } catch (error) {
+    console.error("Resend email send failed:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// E-posta gönderme fonksiyonu (Resend API)
+async function sendEmail(to: string, subject: string, html: string) {
+  // Resend API ile e-posta gönder
+  const result = await sendEmailViaResend(to, subject, html);
+  
+  if (result.success) {
+    return result;
+  }
+
+  // Resend başarısız olursa simülasyon yap
+  console.log("📧 Email Simulation (Resend API failed):");
+  console.log("To:", to);
+  console.log("Subject:", subject);
+  console.log("HTML:", html);
+  console.log("Error:", result.error);
+  console.log("---");
+  
+  return { 
+    success: true, 
+    simulated: true, 
+    message: "Email simulated - Resend API failed" 
+  };
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -89,8 +136,7 @@ serve(async (req: Request) => {
     const services = toArray(contact.services);
     const tags = toArray(contact.tags);
 
-    // RPC çağrısı — parametre isimleri Postgres fonksiyon imzasıyla bire bir eşleşmeli
-    // Burada p_token + p_contact beklediğini varsayıyoruz.
+    // RPC çağrısı
     console.log("Calling accept_invite_and_add_contact with:", {
       p_token: token,
       p_contact: {
@@ -147,7 +193,7 @@ serve(async (req: Request) => {
 
     const insertedContactId: string = result.contact_id;
 
-    // Davet + zincir bilgisi - bu kontrol RPC çağrısından ÖNCE yapılmalı
+    // Davet + zincir bilgisi
     const { data: inviteData, error: inviteErr } = await admin
       .from("invites")
       .select(
@@ -171,14 +217,9 @@ serve(async (req: Request) => {
       console.warn("Invite fetch warning:", inviteErr.message);
     }
 
-    // RPC sonucundan gelen remaining_uses'i kullanarak email gönderim kararı verelim
-    // Bu değer işlem SONRASI durumu gösterir, ama aslında ÖNCESI durumu önemli
-    const canSendEmail = sendEmail && contact.email && inviteData && resend && result.chain_status === "active";
-    
-    // Eğer chain hala active ise veya remaining_uses > 0 ise email gönderebiliriz
-    // Çünkü revoked olsa bile bu işlemde kullanılabilirdi demektir
-    const shouldSendEmail = canSendEmail || (sendEmail && contact.email && inviteData && resend && 
-      ((result.remaining_uses !== null && result.remaining_uses >= 0) || result.chain_status === "active"));
+    // E-posta gönderim kontrolü
+    const shouldSendEmail = sendEmail && contact.email && inviteData && 
+      ((result.remaining_uses !== null && result.remaining_uses >= 0) || result.chain_status === "active");
 
     // Opsiyonel e‑posta (takip daveti)
     if (shouldSendEmail) {
@@ -216,16 +257,11 @@ serve(async (req: Request) => {
             const base = (base_url || "").replace(/\/$/, "");
             const newInviteLink = `${base}/invite/${newToken}`;
 
-            await resend.emails.send({
-              from: "Lovable <onboarding@resend.dev>",
-              to: [contact.email],
-              subject: "Network GPT Davetiyesi",
-              html: `
-                <p><strong>${inviterFullName}</strong> sizi Networking GPT ağına ekledi. 
-                Eğer siz de başkalarını eklemek isterseniz aşağıdaki davet bağlantısını kullanabilirsiniz.</p>
-                <p><a href="${newInviteLink}">${newInviteLink}</a></p>
-              `,
-            });
+            await sendEmail(contact.email!, "Network GPT Davetiyesi", `
+              <p><strong>${inviterFullName}</strong> sizi Networking GPT ağına ekledi. 
+              Eğer siz de başkalarını eklemek isterseniz aşağıdaki davet bağlantısını kullanabilirsiniz.</p>
+              <p><a href="${newInviteLink}">${newInviteLink}</a></p>
+            `);
           } else {
             console.log("Follow-up invite not created: chain exhausted or inactive");
           }

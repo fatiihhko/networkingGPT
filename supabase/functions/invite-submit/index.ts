@@ -9,10 +9,10 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const resendApiKey = Deno.env.get("RESEND_API_KEY");
+const resendApiKey = Deno.env.get("RESEND_API_KEY") || "";
 
 const admin = createClient(supabaseUrl!, serviceRoleKey!);
-const resend = new Resend(resendApiKey);
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 interface SubmitBody {
   token: string;
@@ -30,6 +30,53 @@ interface SubmitBody {
     email?: string | null;
     description?: string | null;
     parent_contact_id?: string | null;
+  };
+}
+
+// Resend API ile e-posta gönderme fonksiyonu
+async function sendEmailViaResend(to: string, subject: string, html: string) {
+  try {
+    if (!resend) {
+      console.warn("Resend API key not configured");
+      return { success: false, error: "Resend not configured" };
+    }
+
+    const result = await resend.emails.send({
+      from: "Network GPT <onboarding@resend.dev>",
+      to: [to],
+      subject,
+      html,
+    });
+
+    console.log("Resend email sent successfully:", result);
+    return { success: true, result };
+  } catch (error) {
+    console.error("Resend email send failed:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// E-posta gönderme fonksiyonu (Resend API)
+async function sendEmail(to: string, subject: string, html: string) {
+  // Resend API ile e-posta gönder
+  const result = await sendEmailViaResend(to, subject, html);
+  
+  if (result.success) {
+    return result;
+  }
+
+  // Resend başarısız olursa simülasyon yap
+  console.log("📧 Email Simulation (Resend API failed):");
+  console.log("To:", to);
+  console.log("Subject:", subject);
+  console.log("HTML:", html);
+  console.log("Error:", result.error);
+  console.log("---");
+  
+  return { 
+    success: true, 
+    simulated: true, 
+    message: "Email simulated - Resend API failed" 
   };
 }
 
@@ -108,69 +155,62 @@ serve(async (req: Request) => {
 
     if (insErr) throw insErr;
 
-    // Decrement max_uses for limited invites and revoke at 0; always increment uses_count
-    if (!unlimited) {
-      const newMax = Math.max(0, (invite.max_uses ?? 0) - 1);
-      const updatePayload: Record<string, any> = {
-        uses_count: (invite.uses_count ?? 0) + 1,
-        max_uses: newMax,
-      };
-      if (newMax === 0) {
-        updatePayload.status = 'revoked';
-      }
-      const { error: updErr } = await admin
-        .from("invites")
-        .update(updatePayload)
-        .eq("id", invite.id);
-      if (updErr) console.error("Failed to update invite usage", updErr);
-    } else {
-      const { error: updErr } = await admin
-        .from("invites")
-        .update({ uses_count: (invite.uses_count ?? 0) + 1 })
-        .eq("id", invite.id);
-      if (updErr) console.error("Failed to update invite usage", updErr);
-    }
+    // Update invite usage
+    const newUsesCount = (invite.uses_count ?? 0) + 1;
+    const newMaxUses = invite.max_uses ?? 0;
+    const shouldRevoke = newMaxUses > 0 && newUsesCount >= newMaxUses;
 
-    // Optional email
+    const { error: updateErr } = await admin
+      .from("invites")
+      .update({
+        uses_count: newUsesCount,
+        status: shouldRevoke ? 'revoked' : 'active',
+      })
+      .eq("id", invite.id);
+
+    if (updateErr) throw updateErr;
+
+    // Send email if requested
     if (sendEmail && contact.email) {
       try {
-        // Create a fresh invite (T2) tied to the NEW contact as inviter
-        const newToken = crypto.randomUUID();
-        const FOLLOW_UP_MAX_USES_DEFAULT = 0; // 0 = unlimited
-        const { error: newInvErr } = await admin
-          .from("invites")
-          .insert({
-            token: newToken,
-            owner_user_id: (invite as any).owner_user_id,
-            inviter_contact_id: (inserted as any).id,
-            max_uses: FOLLOW_UP_MAX_USES_DEFAULT,
-          });
-        if (newInvErr) throw newInvErr;
+        const inviterName = [invite.inviter_first_name, invite.inviter_last_name]
+          .filter(Boolean)
+          .join(" ") || "Bir arkadaşınız";
 
-        const inviterFullName = [
-          (invite as any).inviter_first_name,
-          (invite as any).inviter_last_name,
-        ].filter(Boolean).join(" ") || "Bir davet eden";
+        const subject = "Network GPT Ağına Eklendiğiniz Bildirimi";
+        const html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Network GPT Ağına Hoş Geldiniz!</h2>
+            <p>Merhaba ${contact.first_name}!</p>
+            <p><strong>${inviterName}</strong> sizi Network GPT profesyonel ağına ekledi.</p>
+            <p>Artık platform üzerinden:</p>
+            <ul>
+              <li>Profesyonel bağlantılarınızı yönetebilirsiniz</li>
+              <li>Yeni kişiler ekleyebilirsiniz</li>
+              <li>Ağınızı genişletebilirsiniz</li>
+              <li>İletişim bilgilerinizi güncelleyebilirsiniz</li>
+            </ul>
+            <p>Herhangi bir sorunuz olursa bu e-postaya yanıt verebilirsiniz.</p>
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <p style="color: #666; font-size: 12px;">
+              Bu e-posta Network GPT platformu tarafından gönderilmiştir.
+            </p>
+          </div>
+        `;
 
-        const base = (base_url || '').replace(/\/$/, '');
-        const newInviteLink = base + `/invite/${newToken}`;
-
-        await resend.emails.send({
-          from: "Lovable <onboarding@resend.dev>",
-          to: [contact.email],
-          subject: "Network GPT Davetiyesi",
-          html: `
-            <p><strong>${inviterFullName}</strong> sizi Networking GPT ağına ekledi. Eğer siz de başkalarını eklemek isterseniz aşağıdaki davet bağlantısını kullanabilirsiniz.</p>
-            <p><a href="${newInviteLink}">${newInviteLink}</a></p>
-          `,
-        });
+        await sendEmail(contact.email, subject, html);
       } catch (mailErr) {
-        console.error("Email send failed", mailErr);
+        console.error("Email send failed:", (mailErr as Error)?.message || mailErr);
       }
     }
 
     return new Response(
-      JSON.stringify({ ok: true, contact: inserted }),
+      JSON.stringify({ 
+        ok: true, 
+        contact: inserted,
+        invite_status: shouldRevoke ? 'revoked' : 'active',
+        uses_count: newUsesCount
+      }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (e: any) {

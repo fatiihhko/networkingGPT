@@ -10,6 +10,9 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { UserPlus, MapPin, Briefcase, Phone, Mail, Heart, Tag, FileText, Send } from "lucide-react";
+
 const schema = z.object({
   first_name: z.string().min(1, "Zorunlu"),
   last_name: z.string().min(1, "Zorunlu"),
@@ -39,8 +42,10 @@ const form = useForm<z.infer<typeof schema>>({
   },
 });
 const [sendEmail, setSendEmail] = useState(false);
+const [isSubmitting, setIsSubmitting] = useState(false);
 
 const onSubmit = async (values: z.infer<typeof schema>) => {
+  setIsSubmitting(true);
   const servicesArr = values.services?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
   const tagsArr = values.tags?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
 
@@ -87,6 +92,8 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
     } catch (error: any) {
       toast({ title: "Kaydedilemedi", description: error.message || "Bilinmeyen hata", variant: "destructive" });
       return;
+    } finally {
+      setIsSubmitting(false);
     }
     form.reset({
       first_name: "",
@@ -108,6 +115,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
   const { data: { user }, error: userErr } = await supabase.auth.getUser();
   if (userErr || !user) {
     toast({ title: "Oturum bulunamadı", description: "Lütfen tekrar giriş yapın.", variant: "destructive" });
+    setIsSubmitting(false);
     return;
   }
 
@@ -137,61 +145,241 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
     onSuccess?.(inserted, values);
     form.reset({ relationship_degree: 5 });
   }
+  setIsSubmitting(false);
 };
 
   const rel = form.watch("relationship_degree");
+  const relationshipColor = rel >= 8 ? "hsl(var(--closeness-green))" : 
+                           rel >= 5 ? "hsl(var(--closeness-yellow))" : 
+                           "hsl(var(--closeness-red))";
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
-      <div className="space-y-2">
-        <Label>Ad</Label>
-        <Input {...form.register("first_name")} placeholder="Ad" />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center space-y-2 fade-in">
+        <div className="flex items-center justify-center gap-2">
+          <UserPlus className="h-6 w-6 text-primary" />
+          <h2 className="text-2xl font-bold gradient-text">Yeni Kişi Ekle</h2>
+        </div>
+        <p className="text-muted-foreground">Ağınıza yeni bir bağlantı ekleyin</p>
       </div>
-      <div className="space-y-2">
-        <Label>Soyad</Label>
-        <Input {...form.register("last_name")} placeholder="Soyad" />
-      </div>
-      <div className="space-y-2">
-        <Label>Şehir / Lokasyon</Label>
-        <Input {...form.register("city")} placeholder="İl / İlçe" />
-      </div>
-      <div className="space-y-2">
-        <Label>Meslek</Label>
-        <Input {...form.register("profession")} placeholder="Örn: Avukat, Tasarımcı" />
-      </div>
-      <div className="space-y-2">
-        <Label>Telefon</Label>
-        <Input {...form.register("phone")} placeholder="05xx xxx xx xx" />
-      </div>
-      <div className="space-y-2">
-        <Label>E-posta</Label>
-        <Input type="email" {...form.register("email")} placeholder="eposta@ornek.com" />
-      </div>
-      <div className="space-y-2">
-        <Label>Yakınlık (0-10): {rel}</Label>
-        <Slider min={0} max={10} step={1} value={[rel || 5]} onValueChange={(v) => form.setValue("relationship_degree", v[0] ?? 5)} />
-      </div>
-      <div className="space-y-2 md:col-span-2">
-        <Label>Verebileceği Hizmetler (virgülle ayırın)</Label>
-        <Input {...form.register("services")} placeholder="tasarım, yazılım, pazarlama" />
-      </div>
-      <div className="space-y-2 md:col-span-2">
-        <Label>Özellikler / Etiketler (virgülle ayırın)</Label>
-        <Input {...form.register("tags")} placeholder="girişimci, yatırımcı, mentor" />
-      </div>
-      <div className="space-y-2 md:col-span-2">
-        <Label>Açıklama</Label>
-        <Textarea {...form.register("description")} placeholder="Kısa açıklama" />
-      </div>
-{inviteToken && (
-  <div className="flex items-center gap-2 md:col-span-2">
-    <Checkbox id="sendEmail" checked={sendEmail} onCheckedChange={(v) => setSendEmail(!!v)} />
-    <Label htmlFor="sendEmail">Bu kişiye e-posta gönderilsin mi?</Label>
-  </div>
-)}
-<div className="md:col-span-2">
-  <Button type="submit">Kaydet</Button>
-</div>
-    </form>
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Personal Information Card */}
+        <Card className="modern-card p-6 space-y-4 slide-in">
+          <div className="flex items-center gap-2 mb-4">
+            <UserPlus className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Kişisel Bilgiler</h3>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Ad
+              </Label>
+              <Input 
+                {...form.register("first_name")} 
+                placeholder="Ad" 
+                className="hover-scale"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Soyad
+              </Label>
+              <Input 
+                {...form.register("last_name")} 
+                placeholder="Soyad" 
+                className="hover-scale"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Contact Information Card */}
+        <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.1s'}}>
+          <div className="flex items-center gap-2 mb-4">
+            <Phone className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">İletişim Bilgileri</h3>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Şehir / Lokasyon
+              </Label>
+              <Input 
+                {...form.register("city")} 
+                placeholder="İl / İlçe" 
+                className="hover-scale"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Meslek
+              </Label>
+              <Input 
+                {...form.register("profession")} 
+                placeholder="Örn: Avukat, Tasarımcı" 
+                className="hover-scale"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                Telefon
+              </Label>
+              <Input 
+                {...form.register("phone")} 
+                placeholder="05xx xxx xx xx" 
+                className="hover-scale"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                E-posta
+              </Label>
+              <Input 
+                type="email" 
+                {...form.register("email")} 
+                placeholder="eposta@ornek.com" 
+                className="hover-scale"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Relationship Card */}
+        <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.2s'}}>
+          <div className="flex items-center gap-2 mb-4">
+            <Heart className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Yakınlık Seviyesi</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Yakınlık (0-10): {rel}</Label>
+              <span 
+                className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs"
+                style={{ 
+                  backgroundColor: relationshipColor + '20', 
+                  color: relationshipColor,
+                  borderColor: relationshipColor
+                }}
+              >
+                {rel >= 8 ? "Çok Yakın" : rel >= 5 ? "Orta" : "Uzak"}
+              </span>
+            </div>
+            <Slider 
+              min={0} 
+              max={10} 
+              step={1} 
+              value={[rel || 5]} 
+              onValueChange={(v) => form.setValue("relationship_degree", v[0] ?? 5)}
+              className="hover-scale"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Uzak</span>
+              <span>Orta</span>
+              <span>Çok Yakın</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* Services & Tags Card */}
+        <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.3s'}}>
+          <div className="flex items-center gap-2 mb-4">
+            <Tag className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Hizmetler ve Özellikler</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Verebileceği Hizmetler (virgülle ayırın)
+              </Label>
+              <Input 
+                {...form.register("services")} 
+                placeholder="tasarım, yazılım, pazarlama" 
+                className="hover-scale"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Özellikler / Etiketler (virgülle ayırın)
+              </Label>
+              <Input 
+                {...form.register("tags")} 
+                placeholder="girişimci, yatırımcı, mentor" 
+                className="hover-scale"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Description Card */}
+        <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.4s'}}>
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Açıklama</h3>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Açıklama</Label>
+            <Textarea 
+              {...form.register("description")} 
+              placeholder="Kısa açıklama" 
+              className="hover-scale min-h-[100px]"
+            />
+          </div>
+        </Card>
+
+        {/* Email Option */}
+        {inviteToken && (
+          <Card className="modern-card p-6 slide-in" style={{animationDelay: '0.5s'}}>
+            <div className="flex items-center gap-3">
+              <Checkbox 
+                id="sendEmail" 
+                checked={sendEmail} 
+                onCheckedChange={(v) => setSendEmail(!!v)} 
+                className="hover-scale"
+              />
+              <Label htmlFor="sendEmail" className="flex items-center gap-2 cursor-pointer">
+                <Send className="h-4 w-4 text-primary" />
+                Bu kişiye e-posta gönderilsin mi?
+              </Label>
+            </div>
+          </Card>
+        )}
+
+        {/* Submit Button */}
+        <div className="flex justify-center pt-4 slide-in" style={{animationDelay: '0.6s'}}>
+          <Button 
+            type="submit" 
+            className="btn-modern hover-lift hover-glow px-8 py-3 text-lg"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="loading-spinner mr-2"></div>
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <UserPlus className="h-5 w-5 mr-2" />
+                Kişiyi Kaydet
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 };

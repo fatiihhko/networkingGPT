@@ -1,73 +1,131 @@
-# Welcome to your Lovable project
+# Networking GPT
 
-## Project info
+A modern networking management application built with React, TypeScript, and Supabase.
 
-**URL**: https://lovable.dev/projects/f3c88b06-c51d-4f94-b333-ab0ee9dfbdec
+## Features
 
-## How can I edit this code?
+### Core Functionality
+- **Contact Management**: Add, edit, and organize your professional network
+- **Network Visualization**: Visual representation of your connections
+- **AI Assistant**: Intelligent networking insights and suggestions
+- **Invite System**: Share your network with others via invite links
 
-There are several ways of editing your application.
+### Premium Network Visualization (New!)
 
-**Use Lovable**
+The application now includes a premium visual network map with advanced features:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f3c88b06-c51d-4f94-b333-ab0ee9dfbdec) and start prompting.
+#### Enhanced Avatar System
+- **Professional Avatars**: High-quality avatar component with fallback initials
+- **Gradient Backgrounds**: Deterministic gradient backgrounds based on user ID
+- **Multiple Sizes**: xs, sm, md, lg, xl, 2xl sizes with responsive design
+- **Status Indicators**: Optional online/offline status dots
+- **Upload Support**: URL-based avatar uploads with preview
 
-Changes made via Lovable will be committed automatically to this repo.
+#### Modern Graph Visualization
+- **2D/3D Toggle**: Switch between 2D and 3D visualization modes
+- **Interactive Nodes**: Click to focus, hover for details
+- **Category Color Coding**: 
+  - Work: Blue
+  - Family: Rose  
+  - Friend: Green
+  - Other: Slate
+- **Focus Mode**: Highlight selected person and their connections
+- **Smooth Animations**: Fluid transitions and hover effects
 
-**Use your preferred IDE**
+#### Professional UI Components
+- **Glassmorphism Design**: Modern backdrop blur effects
+- **Consistent Spacing**: 8/12/16 spacing system
+- **Dark Mode Support**: Full dark mode compatibility
+- **Responsive Layout**: Mobile-first design approach
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+#### Enhanced Filtering System
+- **Category Filters**: Quick filter by work/family/friend/other
+- **Closeness Range**: Slider for relationship strength (1-5)
+- **Search Functionality**: Search by name, role, city, or handle
+- **Active Filter Display**: Visual indicators for applied filters
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+#### Advanced Add Person Modal
+- **Avatar Picker**: URL input with preview
+- **Category Selection**: Visual category buttons
+- **Closeness Slider**: Interactive relationship strength selector
+- **Form Validation**: Real-time validation with error handling
+- **Preview Card**: Live preview of the person being added
 
-Follow these steps:
+## Usage
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Hotkeys
+- **N**: Quick add person
+- **F**: Toggle focus mode (when person selected)
+- **T**: Toggle 2D/3D mode
+- **Ctrl/Cmd + K**: Search
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Navigation
+1. **Navigate to Premium Ağ Haritası** tab
+2. **Use 2D/3D toggle** to switch visualization modes
+3. **Click on nodes** to focus on specific people
+4. **Use filters** to narrow down your network view
+5. **Add new people** with the enhanced modal
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Mock vs API Mode
+The application automatically detects your environment:
+- **Browser with Supabase**: Uses real API
+- **Development/Testing**: Falls back to mock data
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Technical Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + Radix UI
+- **State Management**: Zustand
+- **Graph Visualization**: React Force Graph (2D/3D)
+- **Backend**: Supabase (PostgreSQL + Auth + Functions)
+- **UI Components**: Custom components with shadcn/ui
+
+## File Structure
+
+```
+src/
+├── components/
+│   ├── network/
+│   │   ├── VisualNetworkMap.tsx    # Premium network visualization
+│   │   ├── AddPersonModal.tsx      # Enhanced person addition
+│   │   ├── FiltersBar.tsx          # Advanced filtering
+│   │   ├── Avatar.tsx              # Professional avatar component
+│   │   └── ...
+│   └── ui/
+│       ├── avatar.tsx              # Enhanced avatar with variants
+│       └── ...
+├── utils/
+│   └── colorTokens.ts              # Category color system
+├── store/
+│   └── network.ts                  # Zustand store with actions
+└── services/
+    └── NetworkRepository.ts        # Data layer abstraction
+```
+
+## Development
+
+### Running the Application
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Key Features Implementation
+- **Avatar System**: Uses Radix UI Avatar with custom fallback logic
+- **Color Tokens**: Centralized color system for consistent theming
+- **Store Pattern**: Zustand store with computed properties
+- **Repository Pattern**: Swappable data layer for testing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Performance Optimizations
+- **Lazy Loading**: Images load asynchronously
+- **Debounced Search**: Prevents excessive API calls
+- **Memoized Components**: React.memo for expensive operations
+- **Virtual Scrolling**: For large network lists (planned)
 
-**Use GitHub Codespaces**
+## Future Enhancements
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/f3c88b06-c51d-4f94-b333-ab0ee9dfbdec) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- **Real-time Collaboration**: Live network updates
+- **Advanced Analytics**: Network insights and metrics
+- **Export Features**: PDF/CSV network exports
+- **Mobile App**: React Native companion app
+- **AI Integration**: Smart networking suggestions
