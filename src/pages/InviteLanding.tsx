@@ -59,26 +59,45 @@ const [lookup, setLookup] = useState<InviteLookupResponse | null>(null);
 
 useEffect(() => {
 const load = async () => {
-      if (!token) return;
+      if (!token) {
+        console.log("InviteLanding: No token provided");
+        return;
+      }
+      
+      console.log("InviteLanding: Starting lookup for token:", token);
       setLoading(true);
+      
       try {
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-lookup`, {
+        const url = `https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/invite-lookup`;
+        const body = JSON.stringify({ token });
+        
+        console.log("InviteLanding: Making request to:", url);
+        console.log("InviteLanding: Request body:", body);
+        
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcW5uYXNzZ2JpaG5yamtjZWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjQzOTQsImV4cCI6MjA3MDQwMDM5NH0.quHEwhAvPUi8QinNJM4dTnN7MQXlmHKAt0BpYnNosoc`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcW5uYXNzZ2JpaG5yamtjZWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjQzOTQsImV4cCI6MjA3MDQwMDM5NH0.quHEwhAvPUi8QinNJM4dTnN7MQXlmHKAt0BpYnNosoc'
           },
-          body: JSON.stringify({ token })
+          body: body
         });
         
+        console.log("InviteLanding: Response status:", response.status);
+        console.log("InviteLanding: Response ok:", response.ok);
+        
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          const errorText = await response.text();
+          console.log("InviteLanding: Error response text:", errorText);
+          throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
         }
         
         const data = await response.json();
+        console.log("InviteLanding: Response data:", data);
         setLookup(data || null);
       } catch (error: any) {
+        console.error("InviteLanding: Error in lookup:", error);
         toast({ title: "Davet yüklenemedi", description: error.message, variant: "destructive" });
         setLookup(null);
       }

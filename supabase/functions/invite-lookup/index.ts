@@ -16,18 +16,27 @@ if (!supabaseUrl || !serviceRoleKey) {
 const admin = createClient(supabaseUrl!, serviceRoleKey!);
 
 serve(async (req: Request) => {
+  console.log("invite-lookup: Request received", { method: req.method, url: req.url });
+  
   if (req.method === "OPTIONS") {
+    console.log("invite-lookup: Handling OPTIONS request");
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { token } = await req.json();
+    const body = await req.json();
+    console.log("invite-lookup: Request body:", body);
+    
+    const { token } = body;
     if (!token || typeof token !== "string") {
+      console.log("invite-lookup: Invalid token:", token);
       return new Response(JSON.stringify({ valid: false, message: "token gerekli" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    console.log("invite-lookup: Looking up token:", token);
 
     // Load invite with chain information
     const { data: inviteData, error } = await admin
@@ -45,14 +54,22 @@ serve(async (req: Request) => {
       .eq("token", token)
       .maybeSingle();
 
-    if (error) throw error;
+    console.log("invite-lookup: Database query result:", { inviteData, error });
+
+    if (error) {
+      console.error("invite-lookup: Database error:", error);
+      throw error;
+    }
 
     if (!inviteData) {
+      console.log("invite-lookup: Invite not found for token:", token);
       return new Response(JSON.stringify({ valid: false, message: "Davet bulunamadı" }), {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
+
+    console.log("invite-lookup: Invite found:", inviteData);
 
     const chain = inviteData.invite_chains;
     const unlimited = (chain.max_uses ?? 0) === 0;
@@ -60,13 +77,19 @@ serve(async (req: Request) => {
                      (!unlimited && (chain.remaining_uses ?? 0) <= 0);
     const remaining = unlimited ? null : chain.remaining_uses;
 
+    console.log("invite-lookup: Calculated values:", { unlimited, exhausted, remaining });
+
+    const response = {
+      valid: true,
+      exhausted,
+      remaining,
+      parent_contact_id: inviteData.parent_contact_id,
+    };
+
+    console.log("invite-lookup: Returning response:", response);
+
     return new Response(
-      JSON.stringify({
-        valid: true,
-        exhausted,
-        remaining,
-        parent_contact_id: inviteData.parent_contact_id,
-      }),
+      JSON.stringify(response),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (e: any) {
