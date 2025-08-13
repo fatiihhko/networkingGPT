@@ -148,7 +148,11 @@ const Network = () => {
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="mythology-icon">
-                  <UserPlus className="h-12 w-12" style={{color: "hsl(var(--hermes-blue))"}} />
+                  <img 
+                    src="/lovable-uploads/84a0729d-10e4-4a40-b43e-adb34ad6ab0d.png" 
+                    alt="Hermes - Messenger of Gods" 
+                    className="h-24 w-24 object-cover rounded-full"
+                  />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Hermes</h3>
@@ -165,7 +169,11 @@ const Network = () => {
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="mythology-icon">
-                  <ListIcon className="h-12 w-12" style={{color: "hsl(var(--agora-green))"}} />
+                  <img 
+                    src="/lovable-uploads/9fb618e5-56fd-49dc-a341-8c856ba65545.png" 
+                    alt="Agora - Ancient Marketplace" 
+                    className="h-24 w-24 object-cover rounded-full"
+                  />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Agora</h3>
@@ -182,7 +190,11 @@ const Network = () => {
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="mythology-icon">
-                  <Share2 className="h-12 w-12" style={{color: "hsl(var(--atlas-orange))"}} />
+                  <img 
+                    src="/lovable-uploads/57b52711-75e1-460c-86d2-ab82f0984651.png" 
+                    alt="Atlas - Bearer of the World" 
+                    className="h-24 w-24 object-cover rounded-full"
+                  />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Atlas</h3>
@@ -199,7 +211,11 @@ const Network = () => {
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="mythology-icon">
-                  <Bot className="h-12 w-12" style={{color: "hsl(var(--pythia-purple))"}} />
+                  <img 
+                    src="/lovable-uploads/704fb316-91d6-4a36-9a70-acefffccb8c5.png" 
+                    alt="Pythia - Oracle of Delphi" 
+                    className="h-24 w-24 object-cover rounded-full"
+                  />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Pythia</h3>
