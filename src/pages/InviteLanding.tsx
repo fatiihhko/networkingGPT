@@ -247,26 +247,25 @@ const load = async () => {
 
         {/* Step 1: Inviter Information */}
         {!loading && lookup && !exhausted && !stepOneDone && (
-          <Card className="mythology-card marble-texture p-8 slide-in">
+          <div className="max-w-2xl mx-auto p-8 bg-card rounded-lg border relative" style={{ zIndex: 100 }}>
             <div className="space-y-6">
               <div className="text-center space-y-4">
-                <div className="mythology-icon">
-                  <Users className="h-12 w-12" style={{color: "hsl(var(--hermes-blue))"}} />
+                <div>
+                  <Users className="h-12 w-12 mx-auto text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Adım 1: Hermes'in Habercisi</h2>
+                  <h2 className="text-3xl font-bold text-primary">Adım 1: Davet Gönderen Bilgileri</h2>
                   <p className="text-muted-foreground">Sizinle bağlantı kurmak isteyen kişinin bilgilerini girin</p>
                 </div>
               </div>
 
               <form onSubmit={handleInviterSubmit} className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2 font-medium">
-                      <User className="h-4 w-4 text-primary" />
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="first_name" className="block text-sm font-medium mb-2">
                       Ad
                     </Label>
-                    <Input
+                    <input
                       id="first_name"
                       name="first_name"
                       type="text"
@@ -277,17 +276,16 @@ const load = async () => {
                         setInviter({ ...inviter, first_name: e.target.value });
                       }}
                       placeholder="Adınız"
-                      autoComplete="given-name"
-                      style={{ pointerEvents: 'auto', zIndex: 10 }}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{ position: 'relative', zIndex: 101 }}
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2 font-medium">
-                      <User className="h-4 w-4 text-primary" />
+                  <div>
+                    <Label htmlFor="last_name" className="block text-sm font-medium mb-2">
                       Soyad
                     </Label>
-                    <Input
+                    <input
                       id="last_name"
                       name="last_name"
                       type="text"
@@ -298,38 +296,38 @@ const load = async () => {
                         setInviter({ ...inviter, last_name: e.target.value });
                       }}
                       placeholder="Soyadınız"
-                      autoComplete="family-name"
-                      style={{ pointerEvents: 'auto', zIndex: 10 }}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{ position: 'relative', zIndex: 101 }}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 font-medium">
-                    <Mail className="h-4 w-4 text-primary" />
-                    E-posta Adresi
-                  </Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={inviter.email}
-                    onChange={(e) => {
-                      console.log("Email changed:", e.target.value);
-                      setInviter({ ...inviter, email: e.target.value });
-                    }}
-                    placeholder="e-posta@ornek.com"
-                    autoComplete="email"
-                    style={{ pointerEvents: 'auto', zIndex: 10 }}
-                  />
+                  <div>
+                    <Label htmlFor="email" className="block text-sm font-medium mb-2">
+                      E-posta Adresi
+                    </Label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={inviter.email}
+                      onChange={(e) => {
+                        console.log("Email changed:", e.target.value);
+                        setInviter({ ...inviter, email: e.target.value });
+                      }}
+                      placeholder="e-posta@ornek.com"
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                      style={{ position: 'relative', zIndex: 101 }}
+                    />
+                  </div>
                 </div>
 
                 <div className="text-center pt-4">
                   <Button 
                     type="submit" 
                     disabled={submitting}
-                    className="btn-premium px-8 py-3 text-lg"
+                    className="px-8 py-3 text-lg"
+                    style={{ position: 'relative', zIndex: 101 }}
                   >
                     {submitting ? (
                       <>
@@ -346,7 +344,7 @@ const load = async () => {
                 </div>
               </form>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Step 2: Contact Form */}
