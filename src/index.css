@@ -163,6 +163,11 @@ All colors MUST be HSL.
     transform: scale(1.02);
   }
 
+  .hover-scale:focus-within {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 2px hsl(var(--ring));
+  }
+
   .hover-glow {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -707,14 +712,6 @@ All colors MUST be HSL.
 
   .slide-in {
     animation: slideIn 0.3s ease-out;
-  }
-
-  .hover-scale {
-    transition: transform 0.2s ease;
-  }
-
-  .hover-scale:hover {
-    transform: scale(1.02);
   }
 
   @keyframes fadeIn {

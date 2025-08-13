@@ -269,11 +269,16 @@ const load = async () => {
                       </Label>
                       <Input
                         id="first_name"
+                        name="first_name"
+                        type="text"
                         required
                         value={inviter.first_name}
-                        onChange={(e) => setInviter({ ...inviter, first_name: e.target.value })}
+                        onChange={(e) => {
+                          console.log("First name changed:", e.target.value);
+                          setInviter({ ...inviter, first_name: e.target.value });
+                        }}
                         placeholder="Adınız"
-                        className="hover-scale"
+                        autoComplete="given-name"
                       />
                     </div>
                   </Card>
@@ -286,11 +291,16 @@ const load = async () => {
                       </Label>
                       <Input
                         id="last_name"
+                        name="last_name"
+                        type="text"
                         required
                         value={inviter.last_name}
-                        onChange={(e) => setInviter({ ...inviter, last_name: e.target.value })}
+                        onChange={(e) => {
+                          console.log("Last name changed:", e.target.value);
+                          setInviter({ ...inviter, last_name: e.target.value });
+                        }}
                         placeholder="Soyadınız"
-                        className="hover-scale"
+                        autoComplete="family-name"
                       />
                     </div>
                   </Card>
@@ -304,12 +314,16 @@ const load = async () => {
                     </Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       required
                       value={inviter.email}
-                      onChange={(e) => setInviter({ ...inviter, email: e.target.value })}
+                      onChange={(e) => {
+                        console.log("Email changed:", e.target.value);
+                        setInviter({ ...inviter, email: e.target.value });
+                      }}
                       placeholder="e-posta@ornek.com"
-                      className="hover-scale"
+                      autoComplete="email"
                     />
                   </div>
                 </Card>
