@@ -138,29 +138,122 @@ const Network = () => {
       </div>
 
       <ContactsProvider>
-        <Card className="modern-card p-4 md:p-6 hover-lift">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="hidden md:grid grid-cols-4 w-full glass">
-              <TabsTrigger value="add" className="tab-modern hover-scale">Kişi Ekle</TabsTrigger>
-              <TabsTrigger value="list" className="tab-modern hover-scale">Ağ Listesi</TabsTrigger>
-              <TabsTrigger value="map" className="tab-modern hover-scale">Görsel Ağ Haritası</TabsTrigger>
-              <TabsTrigger value="ai" className="tab-modern hover-scale">Yapay Zeka Asistanı</TabsTrigger>
-            </TabsList>
-            <TabsContent value="add" className="fade-in">
-              <ContactForm />
-            </TabsContent>
-            <TabsContent value="list" className="fade-in">
-              <ContactList />
-            </TabsContent>
-            <TabsContent value="map" className="fade-in">
-              <NetworkFlow />
-            </TabsContent>
+        {/* Desktop mythology cards */}
+        <div className="hidden md:block">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            {/* Hermes - Kişi Ekle */}
+            <div 
+              onClick={() => setActiveTab("add")}
+              className={`mythology-card greek-pattern ${activeTab === "add" ? "golden-glow" : ""}`}
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="mythology-icon">
+                  <UserPlus className="h-12 w-12" style={{color: "hsl(var(--hermes-blue))"}} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Hermes</h3>
+                  <p className="text-muted-foreground">Kişi Ekle</p>
+                  <p className="text-xs text-muted-foreground mt-1">Haberciler tanrısı gibi yeni bağlantılar kurun</p>
+                </div>
+              </div>
+            </div>
 
-            <TabsContent value="ai" className="fade-in">
-              <AIAssistant />
-            </TabsContent>
-          </Tabs>
-        </Card>
+            {/* Agora - Ağ Listesi */}
+            <div 
+              onClick={() => setActiveTab("list")}
+              className={`mythology-card greek-pattern ${activeTab === "list" ? "golden-glow" : ""}`}
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="mythology-icon">
+                  <ListIcon className="h-12 w-12" style={{color: "hsl(var(--agora-green))"}} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Agora</h3>
+                  <p className="text-muted-foreground">Ağ Listesi</p>
+                  <p className="text-xs text-muted-foreground mt-1">Antik pazar yeri gibi tüm bağlantılarınızı görün</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Atlas - Görsel Ağ Haritası */}
+            <div 
+              onClick={() => setActiveTab("map")}
+              className={`mythology-card greek-pattern ${activeTab === "map" ? "golden-glow" : ""}`}
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="mythology-icon">
+                  <Share2 className="h-12 w-12" style={{color: "hsl(var(--atlas-orange))"}} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Atlas</h3>
+                  <p className="text-muted-foreground">Görsel Ağ Haritası</p>
+                  <p className="text-xs text-muted-foreground mt-1">Dünyayı taşıyan titan gibi ağınızı keşfedin</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pythia - Yapay Zeka Asistanı */}
+            <div 
+              onClick={() => setActiveTab("ai")}
+              className={`mythology-card greek-pattern ${activeTab === "ai" ? "golden-glow" : ""}`}
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="mythology-icon">
+                  <Bot className="h-12 w-12" style={{color: "hsl(var(--pythia-purple))"}} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Pythia</h3>
+                  <p className="text-muted-foreground">Yapay Zeka Asistanı</p>
+                  <p className="text-xs text-muted-foreground mt-1">Delphi kahinesi gibi ağınız hakkında bilgi alın</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content area for desktop */}
+          <Card className="modern-card marble-texture p-6 hover-lift">
+            {activeTab === "add" && (
+              <div className="fade-in">
+                <ContactForm />
+              </div>
+            )}
+            {activeTab === "list" && (
+              <div className="fade-in">
+                <ContactList />
+              </div>
+            )}
+            {activeTab === "map" && (
+              <div className="fade-in">
+                <NetworkFlow />
+              </div>
+            )}
+            {activeTab === "ai" && (
+              <div className="fade-in">
+                <AIAssistant />
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Mobile tabs (existing functionality) */}
+        <div className="md:hidden">
+          <Card className="modern-card p-4 hover-lift">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsContent value="add" className="fade-in">
+                <ContactForm />
+              </TabsContent>
+              <TabsContent value="list" className="fade-in">
+                <ContactList />
+              </TabsContent>
+              <TabsContent value="map" className="fade-in">
+                <NetworkFlow />
+              </TabsContent>
+              <TabsContent value="ai" className="fade-in">
+                <AIAssistant />
+              </TabsContent>
+            </Tabs>
+          </Card>
+        </div>
       </ContactsProvider>
 
       {/* Alt mobil gezinme çubuğu */}

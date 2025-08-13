@@ -48,6 +48,19 @@ All colors MUST be HSL.
     --sidebar-border: 260 20% 18%;
     --sidebar-ring: 270 65% 45%;
 
+    /* Greek Mythology Theme Colors */
+    --mythology-gold: 45 100% 65%;
+    --mythology-navy: 220 100% 15%;
+    --mythology-marble: 210 20% 95%;
+    --mythology-purple: 270 65% 45%;
+    --mythology-silver: 220 15% 85%;
+    
+    /* Mythological Figure Colors */
+    --hermes-blue: 200 100% 50%;
+    --agora-green: 150 60% 45%;
+    --atlas-orange: 25 85% 55%;
+    --pythia-purple: 280 70% 55%;
+    
     /* Yakınlık renkleri */
     --closeness-green: 142 72% 35%;
     --closeness-yellow: 45 93% 47%;
@@ -493,6 +506,76 @@ All colors MUST be HSL.
   .network-node:nth-child(3) { animation-delay: 0.3s; }
   .network-node:nth-child(4) { animation-delay: 0.4s; }
   .network-node:nth-child(5) { animation-delay: 0.5s; }
+
+  /* Mythology Theme Cards */
+  .mythology-card {
+    @apply relative overflow-hidden rounded-2xl p-8 transition-all duration-500 cursor-pointer;
+    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.9));
+    border: 2px solid hsl(var(--mythology-gold) / 0.2);
+    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.3);
+  }
+
+  .mythology-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent, hsl(var(--mythology-gold) / 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .mythology-card:hover::before {
+    opacity: 1;
+  }
+
+  .mythology-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.4);
+    border-color: hsl(var(--mythology-gold) / 0.5);
+  }
+
+  .mythology-icon {
+    @apply transition-all duration-300;
+  }
+
+  .mythology-card:hover .mythology-icon {
+    transform: scale(1.1) rotate(5deg);
+    filter: drop-shadow(0 0 20px hsl(var(--mythology-gold) / 0.4));
+  }
+
+  /* Greek pattern background */
+  .greek-pattern {
+    background-image: 
+      radial-gradient(circle at 2px 2px, hsl(var(--mythology-gold) / 0.1) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+
+  /* Marble texture */
+  .marble-texture {
+    background: linear-gradient(135deg, 
+      hsl(var(--card)) 0%, 
+      hsl(var(--card) / 0.95) 25%, 
+      hsl(var(--card)) 50%, 
+      hsl(var(--card) / 0.9) 75%, 
+      hsl(var(--card)) 100%);
+  }
+
+  /* Golden glow animation */
+  @keyframes golden-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(var(--mythology-gold) / 0.2);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(var(--mythology-gold) / 0.4);
+    }
+  }
+
+  .golden-glow {
+    animation: golden-glow 3s ease-in-out infinite;
+  }
 
   /* Premium network visualization styles */
   .glass {

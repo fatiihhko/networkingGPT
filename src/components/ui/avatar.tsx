@@ -173,4 +173,7 @@ const Avatar = React.forwardRef<
 })
 Avatar.displayName = AvatarPrimitive.Root.displayName
 
-export { Avatar, avatarVariants, avatarImageVariants, avatarFallbackVariants }
+const AvatarImage = AvatarPrimitive.Image
+const AvatarFallback = AvatarPrimitive.Fallback
+
+export { Avatar, AvatarImage, AvatarFallback, avatarVariants, avatarImageVariants, avatarFallbackVariants }
