@@ -179,20 +179,21 @@ const load = async () => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl float" style={{animationDelay: '1s'}}></div>
       </div>
 
-      {/* Header */}
-      <header className="mb-8 text-center space-y-4 relative z-10 fade-in">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="mythology-icon">
-            <Crown className="h-12 w-12" style={{color: "hsl(var(--mythology-gold))"}} />
-          </div>
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold gradient-text">Networking GPT</h1>
-        <p className="text-xl text-muted-foreground">Davete özel kişi ekleme platformu</p>
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span>Mitolojik güçle ağınızı genişletin</span>
-        </div>
-      </header>
+                    {/* Header */}
+       <header className="mb-8 text-center space-y-4 relative z-10 fade-in">
+         <div className="flex items-center justify-center mb-6">
+           <img 
+             src="/networking-gpt-logo.png" 
+             alt="Networking GPT Logo" 
+             className="h-20 w-auto object-contain"
+           />
+         </div>
+         <p className="text-xl text-muted-foreground">Davete özel kişi ekleme platformu</p>
+         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+           <Sparkles className="h-4 w-4 text-primary" />
+           <span>Mitolojik güçle ağınızı genişletin</span>
+         </div>
+       </header>
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto space-y-8">
@@ -245,19 +246,19 @@ const load = async () => {
           </div>
         </Card>
 
-        {/* Step 1: Inviter Information */}
-        {!loading && lookup && !exhausted && !stepOneDone && (
-          <div className="max-w-2xl mx-auto p-8 bg-card rounded-lg border relative" style={{ zIndex: 100 }}>
-            <div className="space-y-6">
-              <div className="text-center space-y-4">
-                <div>
-                  <Users className="h-12 w-12 mx-auto text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-primary">Adım 1: Davet Gönderen Bilgileri</h2>
-                  <p className="text-muted-foreground">Sizinle bağlantı kurmak isteyen kişinin bilgilerini girin</p>
-                </div>
-              </div>
+                 {/* Step 1: Inviter Information */}
+         {!loading && lookup && !exhausted && !stepOneDone && (
+           <Card className="mythology-card marble-texture p-8 bounce-in">
+             <div className="space-y-6">
+               <div className="text-center space-y-4">
+                 <div className="mythology-icon">
+                   <Users className="h-12 w-12" style={{color: "hsl(var(--hermes-blue))"}} />
+                 </div>
+                 <div>
+                   <h2 className="text-3xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Adım 1: Davet Gönderen Bilgileri</h2>
+                   <p className="text-muted-foreground">Sizinle bağlantı kurmak isteyen kişinin bilgilerini girin</p>
+                 </div>
+               </div>
 
               <form onSubmit={handleInviterSubmit} className="space-y-6">
                 <div className="space-y-4">
@@ -341,11 +342,11 @@ const load = async () => {
                       </>
                     )}
                   </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+                                 </div>
+               </form>
+             </div>
+           </Card>
+         )}
 
         {/* Step 2: Contact Form */}
         {!loading && lookup && !exhausted && stepOneDone && (
@@ -375,45 +376,45 @@ const load = async () => {
               </div>
             </div>
           </Card>
-        )}
+                 )}
 
-        {/* Information Cards */}
-        {!loading && lookup && !exhausted && (
-          <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <Card className="interactive-card p-6 text-center">
-              <div className="space-y-4">
-                <Crown className="h-10 w-10 mx-auto" style={{color: "hsl(var(--mythology-gold))"}} />
-                <div>
-                  <h3 className="font-bold text-lg">Güvenli</h3>
-                  <p className="text-sm text-muted-foreground">Verileriniz Zeus'un koruması altında</p>
-                </div>
-              </div>
-            </Card>
+         {/* Information Cards */}
+         {!loading && lookup && !exhausted && (
+           <div className="grid md:grid-cols-3 gap-6 mt-8">
+             <Card className="interactive-card p-6 text-center">
+               <div className="space-y-4">
+                 <Crown className="h-10 w-10 mx-auto" style={{color: "hsl(var(--mythology-gold))"}} />
+                 <div>
+                   <h3 className="font-bold text-lg">Güvenli</h3>
+                   <p className="text-sm text-muted-foreground">Verileriniz Zeus'un koruması altında</p>
+                 </div>
+               </div>
+             </Card>
 
-            <Card className="interactive-card p-6 text-center">
-              <div className="space-y-4">
-                <Sparkles className="h-10 w-10 mx-auto text-primary" />
-                <div>
-                  <h3 className="font-bold text-lg">Akıllı</h3>
-                  <p className="text-sm text-muted-foreground">Athena'nın bilgeliği ile ağ analizi</p>
-                </div>
-              </div>
-            </Card>
+             <Card className="interactive-card p-6 text-center">
+               <div className="space-y-4">
+                 <Sparkles className="h-10 w-10 mx-auto text-primary" />
+                 <div>
+                   <h3 className="font-bold text-lg">Akıllı</h3>
+                   <p className="text-sm text-muted-foreground">Athena'nın bilgeliği ile ağ analizi</p>
+                 </div>
+               </div>
+             </Card>
 
-            <Card className="interactive-card p-6 text-center">
-              <div className="space-y-4">
-                <Users className="h-10 w-10 mx-auto text-primary" />
-                <div>
-                  <h3 className="font-bold text-lg">Bağlantılı</h3>
-                  <p className="text-sm text-muted-foreground">Apollo'nun müziği gibi uyumlu ağ</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
-      </div>
-    </main>
-  );
-};
-
-export default InviteLanding;
+             <Card className="interactive-card p-6 text-center">
+               <div className="space-y-4">
+                 <Users className="h-10 w-10 mx-auto text-primary" />
+                 <div>
+                   <h3 className="font-bold text-lg">Bağlantılı</h3>
+                   <p className="text-sm text-muted-foreground">Apollo'nun müziği gibi uyumlu ağ</p>
+                 </div>
+               </div>
+             </Card>
+           </div>
+         )}
+       </div>
+     </main>
+   );
+ };
+ 
+ export default InviteLanding;

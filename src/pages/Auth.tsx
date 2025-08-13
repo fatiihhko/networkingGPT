@@ -98,14 +98,13 @@ const Auth = () => {
       <div className="relative z-10 w-full max-w-md px-4">
         <Card className="modern-card glass-dark border-0 shadow-2xl fade-in">
           <CardHeader className="text-center pb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="p-3 rounded-full gradient-primary">
-                <Bot className="h-8 w-8 text-primary-foreground" />
-              </div>
+            <div className="flex items-center justify-center mb-6">
+              <img 
+                src="/networking-gpt-logo.png" 
+                alt="Networking GPT Logo" 
+                className="h-24 w-auto object-contain"
+              />
             </div>
-            <CardTitle className="text-3xl font-bold gradient-text mb-2">
-              Networking GPT
-            </CardTitle>
             <CardDescription className="text-base text-muted-foreground">
               AI destekli akıllı ağ yönetimi platformu. Kişilerinizi organize edin, bağlantılarınızı güçlendirin.
             </CardDescription>

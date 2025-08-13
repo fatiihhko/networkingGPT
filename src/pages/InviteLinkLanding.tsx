@@ -156,10 +156,13 @@ export const InviteLinkLanding = () => {
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        <header className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl md:text-3xl font-bold">Networking GPT</h1>
+        <header className="text-center space-y-4">
+          <div className="flex items-center justify-center mb-4">
+            <img 
+              src="/networking-gpt-logo.png" 
+              alt="Networking GPT Logo" 
+              className="h-16 w-auto object-contain"
+            />
           </div>
           <p className="text-muted-foreground">
             Ağına kişi eklemek için davet bağlantısı

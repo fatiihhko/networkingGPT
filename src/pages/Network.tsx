@@ -116,10 +116,13 @@ const Network = () => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl float" style={{animationDelay: '1s'}}></div>
       </div>
 
-      <header className="mb-6 flex items-center justify-between gap-3 relative z-10 fade-in">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-semibold gradient-text">Networking GPT</h1>
-          <p className="text-muted-foreground">İç ağ yönetimi ve görselleştirme paneli</p>
+            <header className="mb-6 flex items-center justify-between gap-3 relative z-10 fade-in">
+        <div className="flex items-center gap-4">
+          <img 
+            src="/networking-gpt-logo.png" 
+            alt="Networking GPT Logo" 
+            className="h-12 w-auto object-contain"
+          />
         </div>
         <div className="flex items-center gap-2">
           <InviteButtonInline />
@@ -142,13 +145,13 @@ const Network = () => {
               className={`mythology-card greek-pattern ${activeTab === "add" ? "golden-glow" : ""}`}
             >
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="mythology-icon">
-                  <img 
-                    src="/lovable-uploads/84a0729d-10e4-4a40-b43e-adb34ad6ab0d.png" 
-                    alt="Hermes - Messenger of Gods" 
-                    className="h-24 w-24 object-cover rounded-full"
-                  />
-                </div>
+                                 <div className="mythology-icon">
+                   <img 
+                     src="/lovable-uploads/84a0729d-10e4-4a40-b43e-adb34ad6ab0d.png" 
+                     alt="Hermes - Messenger of Gods" 
+                     className="h-36 w-48 object-cover rounded-xl"
+                   />
+                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Hermes</h3>
                   <p className="text-muted-foreground">Kişi Ekle</p>
@@ -163,13 +166,13 @@ const Network = () => {
               className={`mythology-card greek-pattern ${activeTab === "list" ? "golden-glow" : ""}`}
             >
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="mythology-icon">
-                  <img 
-                    src="/lovable-uploads/9fb618e5-56fd-49dc-a341-8c856ba65545.png" 
-                    alt="Agora - Ancient Marketplace" 
-                    className="h-24 w-24 object-cover rounded-full"
-                  />
-                </div>
+                                 <div className="mythology-icon">
+                   <img 
+                     src="/lovable-uploads/9fb618e5-56fd-49dc-a341-8c856ba65545.png" 
+                     alt="Agora - Ancient Marketplace" 
+                     className="h-36 w-48 object-cover rounded-xl"
+                   />
+                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Agora</h3>
                   <p className="text-muted-foreground">Ağ Listesi</p>
@@ -184,13 +187,13 @@ const Network = () => {
               className={`mythology-card greek-pattern ${activeTab === "map" ? "golden-glow" : ""}`}
             >
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="mythology-icon">
-                  <img 
-                    src="/lovable-uploads/57b52711-75e1-460c-86d2-ab82f0984651.png" 
-                    alt="Atlas - Bearer of the World" 
-                    className="h-24 w-24 object-cover rounded-full"
-                  />
-                </div>
+                                 <div className="mythology-icon">
+                   <img 
+                     src="/lovable-uploads/57b52711-75e1-460c-86d2-ab82f0984651.png" 
+                     alt="Atlas - Bearer of the World" 
+                     className="h-36 w-48 object-cover rounded-xl"
+                   />
+                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Atlas</h3>
                   <p className="text-muted-foreground">Görsel Ağ Haritası</p>
@@ -205,13 +208,13 @@ const Network = () => {
               className={`mythology-card greek-pattern ${activeTab === "ai" ? "golden-glow" : ""}`}
             >
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="mythology-icon">
-                  <img 
-                    src="/lovable-uploads/704fb316-91d6-4a36-9a70-acefffccb8c5.png" 
-                    alt="Pythia - Oracle of Delphi" 
-                    className="h-24 w-24 object-cover rounded-full"
-                  />
-                </div>
+                                 <div className="mythology-icon">
+                   <img 
+                     src="/lovable-uploads/704fb316-91d6-4a36-9a70-acefffccb8c5.png" 
+                     alt="Pythia - Oracle of Delphi" 
+                     className="h-36 w-48 object-cover rounded-xl"
+                   />
+                 </div>
                 <div>
                   <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Pythia</h3>
                   <p className="text-muted-foreground">Yapay Zeka Asistanı</p>
