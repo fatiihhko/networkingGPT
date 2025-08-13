@@ -10,7 +10,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Mail, Phone, Building2, Users, Crown, UserCheck } from "lucide-react";
-import { StatsBar } from "./StatsBar";
 
 interface NetworkContact extends Contact {
   level: number;
@@ -318,14 +317,8 @@ export const NetworkFlow = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Stats Bar - Görsel Ağ Haritası'nın üstünde */}
-      <Card className="modern-card p-4 hover-lift">
-        <StatsBar />
-      </Card>
-      
-      <div className="w-full h-[420px] md:h-[560px] relative">
-             {/* Network Legend */}
+    <div className="w-full h-[420px] md:h-[560px] relative">
+      {/* Network Legend */}
        <div className="absolute top-4 left-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 text-xs">
          <div className="font-semibold mb-2">Ağ Haritası Açıklaması</div>
          <div className="space-y-1">
@@ -485,7 +478,6 @@ export const NetworkFlow = () => {
           </div>
         </div>
        )}
-      </div>
 
       {/* Details Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
