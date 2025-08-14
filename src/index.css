@@ -716,6 +716,23 @@ All colors MUST be HSL.
     background-repeat: no-repeat;
   }
 
+  /* Individual card background positions */
+  .menu-card[style*="57b52711"] {
+    background-position: center 20%;
+  }
+
+  .menu-card[style*="704fb316"] {
+    background-position: center 20%;
+  }
+
+  .menu-card[style*="84a0729d"] {
+    background-position: center 40%;
+  }
+
+  .menu-card[style*="9fb618e5"] {
+    background-position: center 40%;
+  }
+
   .menu-card::before {
     content: '';
     @apply absolute inset-0 rounded-xl;
