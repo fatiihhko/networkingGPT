@@ -31,12 +31,12 @@ const TestEmail = () => {
         message: `NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!\n\nBu e-posta eda@rooktech.ai adresinden EmailJS ile gönderildi.\n\nTest zamanı: ${new Date().toLocaleString('tr-TR')}`
       };
 
-      // Initialize EmailJS (you'll need to set these up at emailjs.com)
+      // Initialize EmailJS - Bu değerleri emailjs.com'dan alın
       const result = await emailjs.send(
-        'service_networkgpt', // Service ID (you'll create this)
-        'template_test',      // Template ID (you'll create this)
+        'YOUR_SERVICE_ID',    // Service ID - emailjs.com dashboard'dan alın
+        'YOUR_TEMPLATE_ID',   // Template ID - emailjs.com dashboard'dan alın
         templateParams,
-        '2HL35Reb4zyohI0T9'   // Public Key
+        '2HL35Reb4zyohI0T9'   // Public Key - zaten ayarlandı
       );
 
       console.log('EmailJS result:', result);
@@ -127,10 +127,16 @@ const TestEmail = () => {
             )}
           </div>
 
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>• Test e-postası eda@rooktech.ai adresinden EmailJS ile gönderilir</p>
-            <p>• EmailJS hesabı yapılandırması gerekir (emailjs.com)</p>
-            <p>• Service ID ve Template ID ayarlanmalıdır</p>
+          <div className="text-xs text-muted-foreground space-y-2">
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="font-medium text-yellow-800 mb-1">⚠️ Kurulum Gerekli:</p>
+              <p className="text-yellow-700">1. emailjs.com'a gidip hesap oluşturun</p>
+              <p className="text-yellow-700">2. Yeni bir Email Service ekleyin</p>
+              <p className="text-yellow-700">3. Yeni bir Email Template oluşturun</p>
+              <p className="text-yellow-700">4. Service ID ve Template ID'yi kodda güncelleyin</p>
+            </div>
+            <p>• Şu anda YOUR_SERVICE_ID ve YOUR_TEMPLATE_ID güncellenmeli</p>
+            <p>• Public Key zaten ayarlandı: 2HL35Reb4zyohI0T9</p>
           </div>
         </Card>
       </div>
