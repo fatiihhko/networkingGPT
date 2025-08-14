@@ -176,9 +176,6 @@ const Network = () => {
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
-                  <div className="menu-card-icon">
-                    <UserPlus className="h-6 w-6" />
-                  </div>
                   {activeTab === "add" && <div className="menu-card-indicator" />}
                 </div>
                 <div className="menu-card-body">
@@ -195,9 +192,6 @@ const Network = () => {
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
-                  <div className="menu-card-icon">
-                    <ListIcon className="h-6 w-6" />
-                  </div>
                   {activeTab === "list" && <div className="menu-card-indicator" />}
                 </div>
                 <div className="menu-card-body">
@@ -214,9 +208,6 @@ const Network = () => {
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
-                  <div className="menu-card-icon">
-                    <Map className="h-6 w-6" />
-                  </div>
                   {activeTab === "map" && <div className="menu-card-indicator" />}
                 </div>
                 <div className="menu-card-body">
@@ -233,9 +224,6 @@ const Network = () => {
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
-                  <div className="menu-card-icon">
-                    <Bot className="h-6 w-6" />
-                  </div>
                   {activeTab === "ai" && <div className="menu-card-indicator" />}
                 </div>
                 <div className="menu-card-body">
