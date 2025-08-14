@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -214,31 +214,48 @@ const cleanupOldRequests = () => {
 };
 
 const sendEmail = async (to: string, subject: string, html: string) => {
-  const resendApiKey = Deno.env.get('RESEND_API_KEY');
-  const fromEmail = 'onboarding@resend.dev'; // Use verified domain
+  const smtpHost = Deno.env.get('SMTP_HOST');
+  const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '587');
+  const smtpSecure = Deno.env.get('SMTP_SECURE') === 'true';
+  const smtpUser = Deno.env.get('SMTP_USER');
+  const smtpPass = Deno.env.get('SMTP_PASS');
+  const fromEmail = Deno.env.get('FROM_EMAIL');
 
-  if (!resendApiKey) {
-    throw new Error('RESEND_API_KEY not configured');
+  if (!smtpHost || !smtpUser || !smtpPass || !fromEmail) {
+    throw new Error('SMTP configuration incomplete');
   }
 
-  console.log(`Sending email via Resend API to: ${to}`);
+  console.log(`Sending email via SMTP to: ${to}`);
 
-  const resend = new Resend(resendApiKey);
-
-  const result = await resend.emails.send({
-    from: fromEmail,
-    to: [to],
-    subject: subject,
-    html: html,
+  const client = new SMTPClient({
+    connection: {
+      hostname: smtpHost,
+      port: smtpPort,
+      tls: smtpSecure,
+      auth: {
+        username: smtpUser,
+        password: smtpPass,
+      },
+    },
   });
 
-  if (result.error) {
-    console.error('Resend error:', result.error);
-    throw new Error(`Email sending failed: ${result.error.message}`);
-  }
+  try {
+    await client.send({
+      from: fromEmail,
+      to: to,
+      subject: subject,
+      content: html,
+      html: html,
+    });
 
-  console.log(`Email sent successfully via Resend to: ${to}, ID: ${result.data?.id}`);
-  return { success: true, id: result.data?.id || `resend_${Date.now()}` };
+    console.log(`Email sent successfully via SMTP to: ${to}`);
+    return { success: true, id: `smtp_${Date.now()}` };
+  } catch (error: any) {
+    console.error('SMTP error:', error);
+    throw new Error(`Email sending failed: ${error.message}`);
+  } finally {
+    await client.close();
+  }
 };
 
 serve(async (req: Request): Promise<Response> => {
