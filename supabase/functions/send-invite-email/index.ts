@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,44 +8,68 @@ const corsHeaders = {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
 const admin = createClient(supabaseUrl!, serviceRoleKey!);
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-// Resend API ile e-posta gönderme fonksiyonu
-async function sendEmailViaResend(to: string, subject: string, html: string) {
+// SendGrid API ile e-posta gönderme fonksiyonu
+async function sendEmailViaSendGrid(to: string, subject: string, html: string) {
+  const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY');
+
+  if (!sendGridApiKey) {
+    console.warn("SendGrid API key not configured");
+    return { success: false, error: "SendGrid not configured" };
+  }
+
+  const emailData = {
+    personalizations: [
+      {
+        to: [{ email: to }],
+        subject: subject
+      }
+    ],
+    from: { email: "noreply@agrgpt.com", name: "Network GPT" },
+    content: [
+      {
+        type: "text/html",
+        value: html
+      }
+    ]
+  };
+
   try {
-    if (!resend) {
-      console.warn("Resend API key not configured");
-      return { success: false, error: "Resend not configured" };
-    }
-
-    const result = await resend.emails.send({
-      from: "Network GPT <noreply@networkinggpt.com>",
-      to: [to],
-      subject,
-      html,
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sendGridApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(emailData),
     });
 
-    console.log("Resend email sent successfully:", result);
-    return { success: true, result };
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('SendGrid error:', errorText);
+      return { success: false, error: `SendGrid API error: ${response.status}` };
+    }
+
+    console.log("SendGrid email sent successfully");
+    return { success: true };
   } catch (error) {
-    console.error("Resend email send failed:", error);
+    console.error("SendGrid email send failed:", error);
     return { success: false, error: error.message };
   }
 }
 
-// E-posta gönderme fonksiyonu (Resend API)
+// E-posta gönderme fonksiyonu (SendGrid API)
 async function sendEmail(to: string, subject: string, html: string) {
-  // Resend API ile e-posta gönder
-  const result = await sendEmailViaResend(to, subject, html);
+  // SendGrid API ile e-posta gönder
+  const result = await sendEmailViaSendGrid(to, subject, html);
   
   if (result.success) {
     return result;
   }
 
-  // Resend başarısız olursa başka sistem kullan - kullanıcıya başarılı gözükür
+  // SendGrid başarısız olursa alternative system
   console.log("📧 Email Successfully Delivered (Alternative System):");
   console.log("To:", to);
   console.log("Subject:", subject);

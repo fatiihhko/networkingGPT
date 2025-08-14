@@ -124,30 +124,169 @@ export const InviteLinkManager = () => {
   };
 
   const sendInfoEmail = async () => {
-    console.log("📧 sendInfoEmail function called");
-    console.log("📧 emailToSend:", emailToSend);
-    console.log("📧 user:", user);
-    console.log("📧 loading state:", loading);
-    
     if (!emailToSend) {
-      console.error("📧 No email provided");
       toast({ title: "Hata", description: "E-posta adresi gerekli", variant: "destructive" });
       return;
     }
 
     if (!user) {
-      console.error("📧 No authenticated user");
       toast({ title: "Hata", description: "Lütfen önce giriş yapın", variant: "destructive" });
       return;
     }
 
-    console.log("📧 Starting info email send to:", emailToSend);
     setLoading(true);
     
     try {
-      console.log("📧 About to call supabase.functions.invoke...");
-      
-      const { data, error } = await supabase.functions.invoke("invite-send-info-email", {
+      const infoHtml = `
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Ağ GPT Bilgi</title>
+            <style>
+                body { margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; color: #333; }
+                .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; color: white; }
+                .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+                .content { padding: 40px 30px; text-align: center; }
+                .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; transition: transform 0.2s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>📧 Ağ GPT Bilgi</h1>
+                    <p>Platform hakkında bilgi</p>
+                </div>
+                <div class="content">
+                    <h2>Merhaba! 👋</h2>
+                    <p>Ağ GPT platformu hakkında bilgi almak istediğiniz için teşekkürler. Bu platform profesyonel ağınızı genişletmeniz için tasarlanmıştır.</p>
+                    <a href="${window.location.origin}" class="cta-button">Platformu Keşfet</a>
+                </div>
+            </div>
+        </body>
+        </html>
+      `;
+
+      const emailResponse = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/send-invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: emailToSend,
+          subject: '📧 Ağ GPT Platform Bilgisi',
+          html: infoHtml
+        })
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error('E-posta gönderim hatası');
+      }
+
+      const emailData = await emailResponse.json();
+      if (!emailData.ok) {
+        throw new Error(emailData.error || 'E-posta gönderilemedi');
+      }
+
+      toast({ title: "Başarılı", description: "Bilgi e-postası başarıyla gönderildi!" });
+      setShowSendEmailDialog(false);
+      setEmailToSend("");
+    } catch (error: any) {
+      toast({ 
+        title: "Hata", 
+        description: error.message || "E-posta gönderilirken hata oluştu", 
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendTestEmail = async () => {
+    if (!user) {
+      toast({ title: "Hata", description: "Lütfen önce giriş yapın", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const testHtml = `
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Test E-postası</title>
+            <style>
+                body { margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #333; }
+                .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center; color: white; }
+                .content { padding: 40px 30px; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🧪 Test E-postası</h1>
+                    <p>SendGrid entegrasyonu test ediliyor</p>
+                </div>
+                <div class="content">
+                    <h2>Test Başarılı! ✅</h2>
+                    <p>SendGrid e-posta gönderim sistemi düzgün çalışıyor.</p>
+                    <p><strong>Gönderim Zamanı:</strong> ${new Date().toLocaleString('tr-TR')}</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `;
+
+      const emailResponse = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/send-invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: user.email,
+          subject: '🧪 Test E-postası - SendGrid',
+          html: testHtml
+        })
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error('Test e-postası gönderilemedi');
+      }
+
+      const emailData = await emailResponse.json();
+      if (!emailData.ok) {
+        throw new Error(emailData.error || 'Test e-postası gönderilemedi');
+      }
+
+      toast({ title: "Test Başarılı!", description: `Test e-postası ${user.email} adresine gönderildi.` });
+    } catch (error: any) {
+      toast({ 
+        title: "Test Hatası", 
+        description: error.message || "Test e-postası gönderilemedi", 
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendInviteViaEmail = async () => {
+    if (!inviteEmail) {
+      toast({ title: "Hata", description: "E-posta adresi gerekli", variant: "destructive" });
+      return;
+    }
+
+    if (!user) {
+      toast({ title: "Hata", description: "Lütfen önce giriş yapın", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("send-invite-email", {
         body: {
           email: emailToSend,
           contactName: "Kullanıcı",
@@ -271,6 +410,11 @@ export const InviteLinkManager = () => {
           <p className="text-muted-foreground">Limitli davet bağlantıları oluşturun ve yönetin</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={sendTestEmail} disabled={loading}>
+            <Send className="h-4 w-4 mr-2" />
+            {loading ? "Gönderiliyor..." : "Test E-postası"}
+          </Button>
+
           <Dialog open={showSendInviteDialog} onOpenChange={setShowSendInviteDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">

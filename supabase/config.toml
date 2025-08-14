@@ -21,5 +21,5 @@ verify_jwt = true
 [functions.invite-send-info-email]
 verify_jwt = true
 
-[functions.send-invite-smtp]
+[functions.send-invite]
 verify_jwt = false

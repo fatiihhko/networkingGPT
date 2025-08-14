@@ -63,7 +63,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         },
         body: JSON.stringify({
           token: inviteToken,
-          sendEmail: false, // We'll handle email separately with SMTP
+          sendEmail: false, // We'll handle email separately with SendGrid
           base_url: window.location.origin,
           contact: {
             first_name: values.first_name,
@@ -89,18 +89,97 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
 
       const data = await response.json();
       
-      // If sendEmail is checked and contact has email, send invite via SMTP
+      // If sendEmail is checked and contact has email, send invite via SendGrid
       if (sendEmail && values.email) {
         try {
-          const emailResponse = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/send-invite-smtp`, {
+          const inviteHtml = `
+            <!DOCTYPE html>
+            <html lang="tr">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Ağ GPT Daveti</title>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+                        color: #333;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 20px auto;
+                        background: white;
+                        border-radius: 12px;
+                        overflow: hidden;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                    }
+                    .header {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 40px 30px;
+                        text-align: center;
+                        color: white;
+                    }
+                    .header h1 {
+                        margin: 0;
+                        font-size: 28px;
+                        font-weight: 700;
+                    }
+                    .content {
+                        padding: 40px 30px;
+                        text-align: center;
+                    }
+                    .cta-button {
+                        display: inline-block;
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        text-decoration: none;
+                        padding: 16px 32px;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        font-size: 16px;
+                        transition: transform 0.2s ease;
+                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🎟️ Ağ GPT Daveti</h1>
+                        <p>Ağınıza katılmaya davetlisiniz</p>
+                    </div>
+                    
+                    <div class="content">
+                        <h2>Merhaba! 👋</h2>
+                        <p>
+                            Ağ GPT platformuna katılmak için özel bir davet aldınız. 
+                            Bu platform, profesyonel ağınızı genişletmenize yardımcı olur.
+                        </p>
+                        
+                        <a href="${window.location.origin}/invite/${inviteToken}" class="cta-button">
+                            Daveti Kabul Et ve Katıl
+                        </a>
+                        
+                        <p>
+                            Bu davet bağlantısı güvenlik amacıyla sınırlı süre geçerlidir.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+          `;
+
+          const emailResponse = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/send-invite`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
               to: values.email,
-              inviteUrl: `${window.location.origin}/invite/${inviteToken}`,
-              projectName: 'Ağ GPT'
+              subject: '🎟️ Ağ GPT daveti',
+              html: inviteHtml
             })
           });
 
