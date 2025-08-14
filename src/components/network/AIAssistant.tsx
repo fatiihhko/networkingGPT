@@ -29,45 +29,54 @@ export const AIAssistant = () => {
     // Simulate AI processing
     setTimeout(() => {
       // Extract team requirements from user message
-      const message = userMessage.toLowerCase();
+      const message = userMessage.toLowerCase().trim();
       
-      // Simple keyword extraction
+      // Extract team size
       const teamSizeMatch = message.match(/(\d+)\s*(kişi|kişilik|üye)/);
       const teamSize = teamSizeMatch ? parseInt(teamSizeMatch[1]) : 3;
       
-      // Extract skills/keywords
-      const skills = [];
-      if (message.includes('yazılım') || message.includes('kod') || message.includes('developer')) skills.push('yazılım');
-      if (message.includes('tasarım') || message.includes('design')) skills.push('tasarım');
-      if (message.includes('pazarlama') || message.includes('marketing')) skills.push('pazarlama');
-      if (message.includes('satış') || message.includes('sales')) skills.push('satış');
-      if (message.includes('muhasebe') || message.includes('finans')) skills.push('finans');
-      if (message.includes('yönetim') || message.includes('manager')) skills.push('yönetim');
+      // Extract all meaningful keywords (3+ chars, not common words)
+      const commonWords = ['için', 'bir', 'olan', 'var', 'ile', 'den', 'dan', 'lar', 'ler', 'nin', 'nın', 'nün', 'nun', 'kişi', 'kişilik', 'üye', 'ekip', 'team', 'proje', 'project'];
+      const words = message
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length >= 3 && !commonWords.includes(word))
+        .filter(word => !word.match(/^\d+$/)); // Remove pure numbers
       
       setTeamRequirements({
         description: userMessage,
         teamSize,
-        skills
+        skills: words
       });
 
-      // Find suitable team members
-      const suitableContacts = contacts.filter(contact => {
-        if (!contact.profession && !contact.services?.length && !contact.tags?.length) return false;
-        
+      // Find contacts that match the keywords
+      const scoredContacts = contacts.map(contact => {
         const contactData = [
+          contact.first_name || "",
+          contact.last_name || "",
           contact.profession || "",
           ...(contact.services || []),
-          ...(contact.tags || [])
+          ...(contact.tags || []),
+          contact.description || ""
         ].join(" ").toLowerCase();
         
-        return skills.some(skill => contactData.includes(skill)) || 
-               (skills.length === 0 && contact.relationship_degree >= 5);
+        // Count keyword matches
+        let matchScore = 0;
+        words.forEach(keyword => {
+          if (contactData.includes(keyword)) {
+            matchScore += 1;
+          }
+        });
+        
+        return { contact, matchScore };
       });
 
-      // Sort by relationship degree and limit to team size
-      const finalTeam = suitableContacts
-        .sort((a, b) => (b.relationship_degree || 0) - (a.relationship_degree || 0))
-        .slice(0, teamSize);
+      // Filter contacts with at least one match and sort by match score
+      const finalTeam = scoredContacts
+        .filter(item => item.matchScore > 0)
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, teamSize)
+        .map(item => item.contact);
 
       setSuggestedTeam(finalTeam);
       setChatState("results");
