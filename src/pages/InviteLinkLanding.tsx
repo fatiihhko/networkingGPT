@@ -137,7 +137,7 @@ export const InviteLinkLanding = () => {
 
     setSubmitting(true);
     try {
-      // Get the invite owner's user_id
+      // Get the invite owner's user_id (this is the main center)
       const { data: inviteData, error: inviteError } = await supabase
         .from("invites")
         .select("owner_user_id")
@@ -149,11 +149,11 @@ export const InviteLinkLanding = () => {
         return;
       }
 
-      // Insert contact with selfContact as parent
+      // Insert contact with selfContact as parent (connected to the person from step 1)
       const { data: inserted, error: insertError } = await supabase
         .from("contacts")
         .insert({
-          user_id: inviteData.owner_user_id,
+          user_id: inviteData.owner_user_id, // This goes to the main center's network
           first_name: contactData.first_name,
           last_name: contactData.last_name,
           city: contactData.city,
@@ -164,7 +164,7 @@ export const InviteLinkLanding = () => {
           phone: contactData.phone,
           email: contactData.email || null,
           description: contactData.description,
-          parent_contact_id: selfContact.id, // This person will be connected to the self contact
+          parent_contact_id: selfContact.id, // Connected to the person from step 1
         })
         .select()
         .single();
