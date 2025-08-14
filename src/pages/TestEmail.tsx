@@ -21,14 +21,25 @@ const TestEmail = () => {
     try {
       console.log('Sending test email to:', email);
       
-      // EmailJS template parameters
+      // EmailJS template parameters - Standart değişken isimleri
       const templateParams = {
+        // Yaygın kullanılan değişken isimleri
         to_email: email,
+        user_email: email,
+        email: email,
+        recipient_email: email,
+        
         to_name: 'Test Kullanıcısı',
+        user_name: 'Test Kullanıcısı',
+        name: 'Test Kullanıcısı',
+        
         from_name: 'NetworkGPT',
         from_email: 'eda@rooktech.ai',
+        reply_to: 'eda@rooktech.ai',
+        
         subject: '🧪 NetworkGPT Test E-postası',
-        message: `NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!\n\nBu e-posta eda@rooktech.ai adresinden EmailJS ile gönderildi.\n\nTest zamanı: ${new Date().toLocaleString('tr-TR')}`
+        message: `NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!\n\nBu e-posta eda@rooktech.ai adresinden EmailJS ile gönderildi.\n\nTest zamanı: ${new Date().toLocaleString('tr-TR')}`,
+        content: `NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!\n\nBu e-posta eda@rooktech.ai adresinden EmailJS ile gönderildi.\n\nTest zamanı: ${new Date().toLocaleString('tr-TR')}`
       };
 
       // Initialize EmailJS - Artık doğru değerlerle
