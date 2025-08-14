@@ -116,12 +116,12 @@ export const NetworkFlow = () => {
       }
     });
 
-    // Spacing constants - increased for better separation
-    const baseRadius = Math.min(containerWidth, containerHeight) * 0.35;
-    const childRadius = 150; // Distance from parent for invited contacts
-    const minNodeSpacing = 160; // Minimum distance between any two nodes
-    const nodeSize = 140; // Approximate node size including padding
-    const padding = 140;
+    // Spacing constants - balanced for close positioning without overlap
+    const baseRadius = Math.min(containerWidth, containerHeight) * 0.3;
+    const childRadius = 90; // Closer distance from parent for invited contacts
+    const minNodeSpacing = 130; // Reduced but still safe minimum distance
+    const nodeSize = 120; // Node size including padding
+    const padding = 120;
 
     // First, position manually added contacts around Rook Tech
     if (manuallyAdded.length > 0) {
