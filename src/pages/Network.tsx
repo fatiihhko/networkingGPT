@@ -157,37 +157,34 @@ const Network = () => {
   };
 
   return (
-    <main className="min-h-screen px-4 pt-6 pb-24 md:p-8 gradient-bg">
-      {/* Animated background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl float" style={{animationDelay: '1s'}}></div>
-      </div>
-
-            <header className="mb-6 flex items-center justify-between gap-3 relative z-10 fade-in">
-        <div className="flex items-center gap-4">
-          <img 
-            src="/networking-gpt-logo.png" 
-            alt="Networking GPT Logo" 
-            className="h-8 md:h-12 w-auto object-contain"
-          />
+    <ContactsProvider>
+      <main className="min-h-screen px-4 pt-6 pb-24 md:p-8 gradient-bg">
+        {/* Animated background elements */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl float"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl float" style={{animationDelay: '1s'}}></div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden md:block">
-            <InviteButtonInline />
+
+        <header className="mb-6 flex items-center justify-between gap-3 relative z-10 fade-in">
+          <div className="flex items-center gap-4">
+            <img 
+              src="/networking-gpt-logo.png" 
+              alt="Networking GPT Logo" 
+              className="h-8 md:h-12 w-auto object-contain"
+            />
           </div>
-          <div className="md:hidden">
-            <InviteButtonMobile />
+          <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <InviteButtonInline />
+            </div>
+            <div className="md:hidden">
+              <InviteButtonMobile />
+            </div>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift hover-glow w-10 h-10 p-0">
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift hover-glow w-10 h-10 p-0">
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-      </header>
-
-
-
-      <ContactsProvider>
+        </header>
         {/* Modern Menu Cards */}
         <div className="hidden md:block">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
@@ -263,26 +260,10 @@ const Network = () => {
           {/* Content area for desktop */}
           <Card className="modern-card marble-texture p-6 hover-lift">
             <ErrorBoundary>
-              {activeTab === "add" && (
-                <div className="fade-in">
-                  <ContactForm />
-                </div>
-              )}
-              {activeTab === "list" && (
-                <div className="fade-in">
-                  <ContactList />
-                </div>
-              )}
-              {activeTab === "map" && (
-                <div className="fade-in">
-                  <NetworkFlow />
-                </div>
-              )}
-              {activeTab === "ai" && (
-                <div className="fade-in">
-                  <AIAssistant />
-                </div>
-              )}
+              {activeTab === "add" && <ContactForm />}
+              {activeTab === "list" && <ContactList />}
+              {activeTab === "map" && <NetworkFlow />}
+              {activeTab === "ai" && <AIAssistant />}
             </ErrorBoundary>
           </Card>
         </div>
@@ -292,89 +273,86 @@ const Network = () => {
           <Card className="modern-card p-4 hover-lift">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <ErrorBoundary>
-                <TabsContent value="add" className="fade-in">
+                <TabsContent value="add">
                   <ContactForm />
                 </TabsContent>
-                <TabsContent value="list" className="fade-in">
+                <TabsContent value="list">
                   <ContactList />
                 </TabsContent>
-                <TabsContent value="map" className="fade-in">
+                <TabsContent value="map">
                   <NetworkFlow />
                 </TabsContent>
-                <TabsContent value="ai" className="fade-in">
+                <TabsContent value="ai">
                   <AIAssistant />
                 </TabsContent>
               </ErrorBoundary>
             </Tabs>
           </Card>
         </div>
-      </ContactsProvider>
 
-      {/* Alt mobil gezinme çubuğu */}
-      <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 glass border-t">
-        <div className="grid grid-cols-4">
-          <button
-            type="button"
-            onClick={() => setActiveTab("add")}
-            aria-label="Kişi Ekle"
-            aria-current={activeTab === "add"}
-            className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
-              activeTab === "add" 
-                ? "text-primary pulse-glow" 
-                : "text-muted-foreground hover:text-foreground"
-            } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
-          >
-            <UserPlus className="h-5 w-5" />
-            <span className="text-xs">Kişi Ekle</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("list")}
-            aria-label="Ağ Listesi"
-            aria-current={activeTab === "list"}
-            className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
-              activeTab === "list" 
-                ? "text-primary pulse-glow" 
-                : "text-muted-foreground hover:text-foreground"
-            } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
-          >
-            <ListIcon className="h-5 w-5" />
-            <span className="text-xs">Ağ Listesi</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("map")}
-            aria-label="Görsel Ağ Haritası"
-            aria-current={activeTab === "map"}
-            className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
-              activeTab === "map" 
-                ? "text-primary pulse-glow" 
-                : "text-muted-foreground hover:text-foreground"
-            } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
-          >
-            <Share2 className="h-5 w-5" />
-            <span className="text-xs">Harita</span>
-          </button>
-
-
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("ai")}
-            aria-label="Yapay Zeka Asistanı"
-            aria-current={activeTab === "ai"}
-            className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
-              activeTab === "ai" 
-                ? "text-primary pulse-glow" 
-                : "text-muted-foreground hover:text-foreground"
-            } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
-          >
-            <Bot className="h-5 w-5" />
-            <span className="text-xs">Asistan</span>
-          </button>
-        </div>
-      </nav>
-    </main>
+        {/* Alt mobil gezinme çubuğu */}
+        <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 glass border-t">
+          <div className="grid grid-cols-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab("add")}
+              aria-label="Kişi Ekle"
+              aria-current={activeTab === "add"}
+              className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
+                activeTab === "add" 
+                  ? "text-primary pulse-glow" 
+                  : "text-muted-foreground hover:text-foreground"
+              } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+            >
+              <UserPlus className="h-5 w-5" />
+              <span className="text-xs">Kişi Ekle</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("list")}
+              aria-label="Ağ Listesi"
+              aria-current={activeTab === "list"}
+              className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
+                activeTab === "list" 
+                  ? "text-primary pulse-glow" 
+                  : "text-muted-foreground hover:text-foreground"
+              } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+            >
+              <ListIcon className="h-5 w-5" />
+              <span className="text-xs">Ağ Listesi</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("map")}
+              aria-label="Görsel Ağ Haritası"
+              aria-current={activeTab === "map"}
+              className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
+                activeTab === "map" 
+                  ? "text-primary pulse-glow" 
+                  : "text-muted-foreground hover:text-foreground"
+              } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+            >
+              <Share2 className="h-5 w-5" />
+              <span className="text-xs">Harita</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("ai")}
+              aria-label="Yapay Zeka Asistanı"
+              aria-current={activeTab === "ai"}
+              className={`h-16 w-full flex flex-col items-center justify-center gap-1 transition-all duration-300 hover:scale-110 ${
+                activeTab === "ai" 
+                  ? "text-primary pulse-glow" 
+                  : "text-muted-foreground hover:text-foreground"
+              } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+            >
+              <Bot className="h-5 w-5" />
+              <span className="text-xs">Asistan</span>
+            </button>
+          </div>
+        </nav>
+      </main>
+    </ContactsProvider>
   );
 };
 
