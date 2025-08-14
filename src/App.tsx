@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import TestEmail from "./pages/TestEmail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Network from "./pages/Network";
@@ -29,7 +30,7 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          <Route path="/invite/:token" element={<InviteLanding />} />
+          <Route path="/test-email" element={<TestEmail />} />
           <Route path="/invite-link/:token" element={<InviteLinkLanding />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
