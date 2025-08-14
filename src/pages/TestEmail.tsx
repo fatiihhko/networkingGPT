@@ -36,7 +36,7 @@ const TestEmail = () => {
         'service_networkgpt', // Service ID (you'll create this)
         'template_test',      // Template ID (you'll create this)
         templateParams,
-        'YOUR_PUBLIC_KEY'     // Public Key (you'll get this)
+        '2HL35Reb4zyohI0T9'   // Public Key
       );
 
       console.log('EmailJS result:', result);
