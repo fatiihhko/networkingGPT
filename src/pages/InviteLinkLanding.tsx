@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, AlertCircle } from "lucide-react";
@@ -142,7 +142,7 @@ export const InviteLinkLanding = () => {
               {error || "Bu davet bağlantısı artık geçerli değil."}
             </p>
             <Button asChild>
-              <a href="/">Ana Sayfaya Dön</a>
+              <Link to="/">Ana Sayfaya Dön</Link>
             </Button>
           </CardContent>
         </Card>
@@ -189,7 +189,7 @@ export const InviteLinkLanding = () => {
                   </p>
                 </div>
                 <Button asChild>
-                  <a href="/">Ana Sayfaya Dön</a>
+                  <Link to="/">Ana Sayfaya Dön</Link>
                 </Button>
               </div>
             ) : (
