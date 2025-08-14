@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -18,72 +19,29 @@ const TestEmail = () => {
 
     setIsLoading(true);
     try {
-      const testHtml = `
-        <!DOCTYPE html>
-        <html lang="tr">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Test E-postası</title>
-            <style>
-                body {
-                    margin: 0;
-                    padding: 20px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-                }
-                .container {
-                    max-width: 500px;
-                    margin: 0 auto;
-                    background: white;
-                    border-radius: 12px;
-                    padding: 30px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-                }
-                .header {
-                    text-align: center;
-                    color: #333;
-                    margin-bottom: 20px;
-                }
-                .success {
-                    color: #16a34a;
-                    font-weight: bold;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>✅ Test E-postası</h1>
-                    <p class="success">NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!</p>
-                    <p>Bu e-posta eda@rooktech.ai adresinden Resend ile gönderildi.</p>
-                    <hr>
-                    <p><small>Test zamanı: ${new Date().toLocaleString('tr-TR')}</small></p>
-                </div>
-            </div>
-        </body>
-        </html>
-      `;
-
       console.log('Sending test email to:', email);
       
-      const response = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/send-invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: email,
-          subject: '🧪 NetworkGPT Test E-postası',
-          html: testHtml
-        })
-      });
+      // EmailJS template parameters
+      const templateParams = {
+        to_email: email,
+        to_name: 'Test Kullanıcısı',
+        from_name: 'NetworkGPT',
+        from_email: 'eda@rooktech.ai',
+        subject: '🧪 NetworkGPT Test E-postası',
+        message: `NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!\n\nBu e-posta eda@rooktech.ai adresinden EmailJS ile gönderildi.\n\nTest zamanı: ${new Date().toLocaleString('tr-TR')}`
+      };
 
-      console.log('Email response status:', response.status);
-      const data = await response.json();
-      console.log('Email response data:', data);
+      // Initialize EmailJS (you'll need to set these up at emailjs.com)
+      const result = await emailjs.send(
+        'service_networkgpt', // Service ID (you'll create this)
+        'template_test',      // Template ID (you'll create this)
+        templateParams,
+        'YOUR_PUBLIC_KEY'     // Public Key (you'll get this)
+      );
 
-      if (response.ok && data.ok) {
+      console.log('EmailJS result:', result);
+      
+      if (result.status === 200) {
         setLastResult({ success: true, message: 'E-posta başarıyla gönderildi!' });
         toast({ 
           title: "Başarılı!", 
@@ -91,15 +49,15 @@ const TestEmail = () => {
           variant: "default"
         });
       } else {
-        setLastResult({ success: false, message: data.error || 'E-posta gönderilemedi' });
+        setLastResult({ success: false, message: 'E-posta gönderilemedi' });
         toast({ 
           title: "Hata", 
-          description: data.error || 'E-posta gönderilemedi',
+          description: 'E-posta gönderilemedi',
           variant: "destructive"
         });
       }
     } catch (error: any) {
-      console.error('Email test error:', error);
+      console.error('EmailJS test error:', error);
       setLastResult({ success: false, message: error.message || 'Beklenmeyen hata' });
       toast({ 
         title: "Hata", 
@@ -170,9 +128,9 @@ const TestEmail = () => {
           </div>
 
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>• Test e-postası eda@rooktech.ai adresinden Resend ile gönderilir</p>
-            <p>• RESEND_API_KEY Supabase secrets'ta yapılandırılmalıdır</p>
-            <p>• Resend.com'da domain doğrulaması gerekir</p>
+            <p>• Test e-postası eda@rooktech.ai adresinden EmailJS ile gönderilir</p>
+            <p>• EmailJS hesabı yapılandırması gerekir (emailjs.com)</p>
+            <p>• Service ID ve Template ID ayarlanmalıdır</p>
           </div>
         </Card>
       </div>
