@@ -121,14 +121,45 @@ const Network = () => {
           <img 
             src="/networking-gpt-logo.png" 
             alt="Networking GPT Logo" 
-            className="h-12 w-auto object-contain"
+            className="h-8 md:h-12 w-auto object-contain"
           />
         </div>
         <div className="flex items-center gap-2">
-          <InviteButtonInline />
+          <div className="hidden md:block">
+            <InviteButtonInline />
+          </div>
+          <div className="md:hidden">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" className="btn-modern hover-lift">
+                  <Sparkles className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="glass-dark">
+                <DialogHeader>
+                  <DialogTitle className="gradient-text">Davet Bağlantısı Oluştur</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Kullanım limiti (0 = sınırsız)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      defaultValue={0}
+                      className="hover-scale"
+                    />
+                  </div>
+                  <Button className="btn-modern hover-lift w-full">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Bağlantı Oluştur
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift hover-glow">
             <LogOut className="h-4 w-4" />
-            Çıkış
+            <span className="hidden md:inline ml-2">Çıkış</span>
           </Button>
         </div>
       </header>
