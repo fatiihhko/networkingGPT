@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -213,38 +214,31 @@ const cleanupOldRequests = () => {
 };
 
 const sendEmail = async (to: string, subject: string, html: string) => {
-  const smtpHost = Deno.env.get('SMTP_HOST');
-  const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '587');
-  const smtpUser = Deno.env.get('SMTP_USER');
-  const smtpPass = Deno.env.get('SMTP_PASS');
-  const fromEmail = Deno.env.get('FROM_EMAIL');
+  const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  const fromEmail = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev';
 
-  if (!smtpHost || !smtpUser || !smtpPass || !fromEmail) {
-    throw new Error('SMTP configuration incomplete');
+  if (!resendApiKey) {
+    throw new Error('RESEND_API_KEY not configured');
   }
 
-  console.log(`Sending email via native fetch to SMTP service`);
+  console.log(`Sending email via Resend API to: ${to}`);
 
-  // Use Gmail's SMTP via a simple HTTP POST approach
-  const emailData = {
+  const resend = new Resend(resendApiKey);
+
+  const result = await resend.emails.send({
     from: fromEmail,
-    to: to,
+    to: [to],
     subject: subject,
     html: html,
-    smtp: {
-      host: smtpHost,
-      port: smtpPort,
-      user: smtpUser,
-      pass: smtpPass
-    }
-  };
+  });
 
-  // For now, let's use a simple approach and just return success
-  // In production, you would implement proper SMTP or use a service like SendGrid
-  console.log(`Email would be sent to: ${to} with subject: ${subject}`);
-  console.log(`SMTP Config: ${smtpHost}:${smtpPort}, User: ${smtpUser}`);
-  
-  return { success: true, id: `smtp_${Date.now()}_${Math.random().toString(36).slice(2)}` };
+  if (result.error) {
+    console.error('Resend error:', result.error);
+    throw new Error(`Email sending failed: ${result.error.message}`);
+  }
+
+  console.log(`Email sent successfully via Resend to: ${to}, ID: ${result.data?.id}`);
+  return { success: true, id: result.data?.id || `resend_${Date.now()}` };
 };
 
 serve(async (req: Request): Promise<Response> => {
