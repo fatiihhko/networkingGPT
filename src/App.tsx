@@ -31,6 +31,7 @@ const App = () => (
             }
           />
           <Route path="/test-email" element={<TestEmail />} />
+          <Route path="/invite/:token" element={<InviteLanding />} />
           <Route path="/invite-link/:token" element={<InviteLinkLanding />} />
           {/* Redirect old invite format to new format */}
           <Route path="/invite/:token" element={<InviteLinkLanding />} />

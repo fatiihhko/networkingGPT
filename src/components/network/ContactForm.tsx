@@ -1,4 +1,5 @@
 import React, { useState, memo } from "react";
+import emailjs from '@emailjs/browser';
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -93,7 +94,6 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         toast({ title: "Hata", description: "Davet bilgileri bulunamadı", variant: "destructive" });
         return;
       }
-
       // Insert contact directly to the invite owner's contacts
       const { data: inserted, error: insertError } = await supabase
         .from("contacts")
@@ -120,137 +120,45 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
       }
 
       const data = { contact: inserted };
-      
-      // If contact has email, send invite via SendGrid automatically
-      if (values.email) {
+
+      // Optional notification email via EmailJS
+      if (sendEmail && values.email) {
         try {
-          const inviteHtml = `
-            <!DOCTYPE html>
-            <html lang="tr">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Ağ GPT Daveti</title>
-                <style>
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-                        color: #333;
-                    }
-                    .container {
-                        max-width: 600px;
-                        margin: 20px auto;
-                        background: white;
-                        border-radius: 12px;
-                        overflow: hidden;
-                        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                    }
-                    .header {
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        padding: 40px 30px;
-                        text-align: center;
-                        color: white;
-                    }
-                    .header h1 {
-                        margin: 0;
-                        font-size: 28px;
-                        font-weight: 700;
-                    }
-                    .content {
-                        padding: 40px 30px;
-                        text-align: center;
-                    }
-                    .cta-button {
-                        display: inline-block;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        text-decoration: none;
-                        padding: 16px 32px;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        font-size: 16px;
-                        transition: transform 0.2s ease;
-                        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🎟️ Ağ GPT Daveti</h1>
-                        <p>Ağınıza katılmaya davetlisiniz</p>
-                    </div>
-                    
-                    <div class="content">
-                        <h2>Merhaba! 👋</h2>
-                        <p>
-                            Ağ GPT platformuna katılmak için özel bir davet aldınız. 
-                            Bu platform, profesyonel ağınızı genişletmenize yardımcı olur.
-                        </p>
-                        
-                        <a href="${window.location.origin}/invite-link/${inviteToken}" class="cta-button">
-                            Daveti Kabul Et ve Katıl
-                        </a>
-                        
-                        <p>
-                            Bu davet bağlantısı güvenlik amacıyla sınırlı süre geçerlidir.
-                        </p>
-                    </div>
-                </div>
-            </body>
-            </html>
-          `;
+          const templateParams = {
+            to_email: values.email,
+            user_email: values.email,
+            email: values.email,
+            recipient_email: values.email,
+            to_name: `${values.first_name} ${values.last_name}`.trim(),
+            user_name: `${values.first_name} ${values.last_name}`.trim(),
+            name: `${values.first_name} ${values.last_name}`.trim(),
+            from_name: 'NetworkGPT',
+            from_email: 'eda@rooktech.ai',
+            reply_to: 'eda@rooktech.ai',
+            subject: '🎟️ Ağınıza katılımınız kaydedildi',
+            message: `Merhaba ${values.first_name},\n\nBilgileriniz başarıyla alındı. Davet bağlantınızı kullanarak ağa katıldınız.\n\nSevgiler, NetworkGPT`
+          } as Record<string, string>;
 
-          const emailResponse = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/send-invite`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: values.email,
-              subject: '🎟️ Ağ GPT daveti',
-              html: inviteHtml
-            })
-          });
+          const result = await emailjs.send(
+            'service_cqmrqtj',
+            'template_4cm4nqr',
+            templateParams,
+            '2HL35Reb4zyohI0T9'
+          );
 
-          if (!emailResponse.ok) {
-            const emailError = await emailResponse.json().catch(() => ({ error: 'E-posta gönderilemedi' }));
-            console.warn('Email sending failed:', emailError);
-            toast({ 
-              title: "Kişi eklendi", 
-              description: "Kişi eklendi ancak e-posta gönderilemedi.", 
-              variant: "default" 
-            });
+          if (result.status === 200) {
+            toast({ title: "Başarılı!", description: "Bilgilendirme e-postası gönderildi." });
           } else {
-            const emailData = await emailResponse.json();
-            if (emailData.ok) {
-              toast({ 
-                title: "Başarılı!", 
-                description: "Kişi eklendi ve bilgi e-postası gönderildi." 
-              });
-            } else {
-              toast({ 
-                title: "Kişi eklendi", 
-                description: "Kişi eklendi ancak e-posta gönderilemedi.", 
-                variant: "default" 
-              });
-            }
+            toast({ title: "Kişi eklendi", description: "Kişi eklendi ancak e-posta gönderilemedi.", variant: "default" });
           }
-        } catch (emailError: any) {
-          console.warn('Email sending error:', emailError);
-          toast({ 
-            title: "Kişi eklendi", 
-            description: "Kişi eklendi ancak e-posta gönderilemedi.", 
-            variant: "default" 
-          });
+        } catch (emailErr: any) {
+          console.warn('EmailJS send error:', emailErr);
+          toast({ title: "Kişi eklendi", description: "Kişi eklendi ancak e-posta gönderilemedi.", variant: "default" });
         }
       } else {
         toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
       }
-      
-      
+
       onSuccess?.(data?.contact ?? null, values, sendEmail);
       
       // Refresh contacts context
@@ -307,7 +215,44 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
   if (error) {
     toast({ title: "Kaydedilemedi", description: error.message, variant: "destructive" });
   } else {
-    toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+    // Optional notification email via EmailJS in authenticated flow
+    if (sendEmail && values.email) {
+      try {
+        const templateParams = {
+          to_email: values.email,
+          user_email: values.email,
+          email: values.email,
+          recipient_email: values.email,
+          to_name: `${values.first_name} ${values.last_name}`.trim(),
+          user_name: `${values.first_name} ${values.last_name}`.trim(),
+          name: `${values.first_name} ${values.last_name}`.trim(),
+          from_name: 'NetworkGPT',
+          from_email: 'eda@rooktech.ai',
+          reply_to: 'eda@rooktech.ai',
+          subject: '🎟️ Ağınıza katılımınız kaydedildi',
+          message: `Merhaba ${values.first_name},\n\nBilgileriniz başarıyla alındı. NetworkGPT ağına eklendiniz.\n\nSevgiler, NetworkGPT`
+        } as Record<string, string>;
+
+        const result = await emailjs.send(
+          'service_cqmrqtj',
+          'template_4cm4nqr',
+          templateParams,
+          '2HL35Reb4zyohI0T9'
+        );
+
+        if (result.status === 200) {
+          toast({ title: "Başarılı!", description: "Bilgilendirme e-postası gönderildi." });
+        } else {
+          toast({ title: "Kişi eklendi", description: "Kişi eklendi ancak e-posta gönderilemedi.", variant: "default" });
+        }
+      } catch (emailErr: any) {
+        console.warn('EmailJS send error:', emailErr);
+        toast({ title: "Kişi eklendi", description: "Kişi eklendi ancak e-posta gönderilemedi.", variant: "default" });
+      }
+    } else {
+      toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+    }
+
     onSuccess?.(inserted, values);
     form.reset({ relationship_degree: 5 });
     
@@ -527,6 +472,19 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
           </Card>
         )}
 
+        {/* Notification Email Toggle */}
+        <Card className="modern-card p-4 space-y-3 slide-in" style={{animationDelay: '0.5s'}}>
+          <div className="flex items-start gap-3">
+            <Checkbox id="sendEmail" checked={sendEmail} onCheckedChange={(v) => setSendEmail(Boolean(v))} />
+            <div className="space-y-1">
+              <Label htmlFor="sendEmail" className="cursor-pointer flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                Bu kişiye bilgilendirme maili gönder
+              </Label>
+              <p className="text-xs text-muted-foreground">E-posta alanı doluysa, EmailJS üzerinden bilgilendirme e-postası gönderilir.</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Submit Button */}
         <div className="flex justify-center pt-4 slide-in" style={{animationDelay: '0.6s'}}>
