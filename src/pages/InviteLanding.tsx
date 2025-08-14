@@ -246,8 +246,8 @@ const load = async () => {
           </div>
         </Card>
 
-                 {/* Step 1: Inviter Information */}
-         {!loading && lookup && !exhausted && !stepOneDone && (
+        {/* Step 1: Inviter Information */}
+        {!loading && lookup && !exhausted && !stepOneDone && (
            <Card className="mythology-card marble-texture p-8 bounce-in">
              <div className="space-y-6">
                <div className="text-center space-y-4">
