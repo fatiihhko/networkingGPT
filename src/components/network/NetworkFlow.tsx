@@ -369,7 +369,7 @@ export const NetworkFlow = () => {
                    )}
                  </div>
                </TooltipTrigger>
-                               <TooltipContent className="glass-dark max-w-xs">
+                               <TooltipContent className="glass-dark max-w-xs z-[9999] bg-popover/95 backdrop-blur-md border border-border/50">
                   <div className="space-y-2">
                     <div className="font-semibold">{contact.first_name} {contact.last_name}</div>
                     <div className="text-sm text-muted-foreground">E-posta: {contact.email || "-"}</div>
