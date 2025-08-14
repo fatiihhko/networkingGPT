@@ -173,6 +173,7 @@ const Network = () => {
             <div 
               onClick={() => setActiveTab("add")}
               className={`menu-card ${activeTab === "add" ? "menu-card-active" : ""}`}
+              style={{backgroundImage: 'url(/lovable-uploads/57b52711-75e1-460c-86d2-ab82f0984651.png)'}}
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
@@ -189,6 +190,7 @@ const Network = () => {
             <div 
               onClick={() => setActiveTab("list")}
               className={`menu-card ${activeTab === "list" ? "menu-card-active" : ""}`}
+              style={{backgroundImage: 'url(/lovable-uploads/84a0729d-10e4-4a40-b43e-adb34ad6ab0d.png)'}}
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
@@ -205,6 +207,7 @@ const Network = () => {
             <div 
               onClick={() => setActiveTab("map")}
               className={`menu-card ${activeTab === "map" ? "menu-card-active" : ""}`}
+              style={{backgroundImage: 'url(/lovable-uploads/9fb618e5-56fd-49dc-a341-8c856ba65545.png)'}}
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
@@ -221,6 +224,7 @@ const Network = () => {
             <div 
               onClick={() => setActiveTab("ai")}
               className={`menu-card ${activeTab === "ai" ? "menu-card-active" : ""}`}
+              style={{backgroundImage: 'url(/lovable-uploads/704fb316-91d6-4a36-9a70-acefffccb8c5.png)'}}
             >
               <div className="menu-card-content">
                 <div className="menu-card-header">
