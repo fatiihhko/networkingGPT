@@ -495,14 +495,14 @@ export const NetworkFlow = () => {
 
   return (
     <div className="space-y-4">
-      {/* Stats Bar - Görsel Ağ Haritası'nın üstünde */}
-      <Card className="modern-card p-4 hover-lift">
+      {/* Stats Bar - Hidden on mobile */}
+      <Card className="modern-card p-4 hover-lift hidden md:block">
         <StatsBar />
       </Card>
       
-      <div className="w-full h-[500px] md:h-[700px] lg:h-[900px] relative bg-gradient-to-br from-background via-background to-muted/20 rounded-xl overflow-hidden border border-border/50">
-      {/* Modern Network Legend */}
-       <div className="absolute top-6 left-6 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg">
+      <div className="w-full h-[70vh] md:h-[700px] lg:h-[900px] relative bg-gradient-to-br from-background via-background to-muted/20 rounded-xl overflow-hidden border border-border/50">
+      {/* Modern Network Legend - Hidden on mobile */}
+       <div className="absolute top-6 left-6 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg hidden md:block">
          <div className="font-semibold mb-3 text-card-foreground">Ağ Haritası</div>
          <div className="space-y-2">
            <div className="flex items-center gap-2">
@@ -579,8 +579,8 @@ export const NetworkFlow = () => {
         </ReactFlow>
       </TooltipProvider>
 
-             {/* Modern Network Statistics */}
-       <div className="absolute bottom-4 left-4 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg">
+              {/* Modern Network Statistics - Hidden on mobile */}
+       <div className="absolute bottom-4 left-4 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg hidden md:block">
          <div className="font-semibold mb-3 text-card-foreground">İstatistikler</div>
          <div className="space-y-2">
            <div className="flex justify-between items-center">
