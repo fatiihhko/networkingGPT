@@ -197,54 +197,56 @@ const load = async () => {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Status Card */}
-        <Card className="mythology-card greek-pattern p-8 text-center">
-          <div className="space-y-6">
-            {loading && (
-              <div className="space-y-4">
-                <div className="mythology-icon">
-                  <div className="loading-spinner mx-auto"></div>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Davet Doğrulanıyor</h2>
-                  <p className="text-muted-foreground mt-2">Hermes gibi hızla bağlantınızı kontrol ediyoruz...</p>
-                </div>
-              </div>
-            )}
-
-            {!loading && (!lookup || !lookup.valid) && (
-              <div className="space-y-4">
-                <div className="mythology-icon">
-                  <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-destructive">Geçersiz Davet</h2>
-                  <p className="text-muted-foreground mt-2">Bu bağlantı geçersiz veya süresi dolmuş.</p>
-                  <div className="mt-6">
-                    <Link to="/auth">
-                      <Button className="btn-premium">
-                        <User className="h-5 w-5 mr-2" />
-                        Giriş Yap
-                      </Button>
-                    </Link>
+        {/* Status Card - only show when needed */}
+        {(loading || (!lookup || !lookup.valid) || (lookup && exhausted)) && (
+          <Card className="mythology-card greek-pattern p-8 text-center">
+            <div className="space-y-6">
+              {loading && (
+                <div className="space-y-4">
+                  <div className="mythology-icon">
+                    <div className="loading-spinner mx-auto"></div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Davet Doğrulanıyor</h2>
+                    <p className="text-muted-foreground mt-2">Hermes gibi hızla bağlantınızı kontrol ediyoruz...</p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {!loading && lookup && exhausted && (
-              <div className="space-y-4">
-                <div className="mythology-icon">
-                  <Clock className="h-16 w-16 text-warning mx-auto" />
+              {!loading && (!lookup || !lookup.valid) && (
+                <div className="space-y-4">
+                  <div className="mythology-icon">
+                    <AlertCircle className="h-16 w-16 text-destructive mx-auto" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-destructive">Geçersiz Davet</h2>
+                    <p className="text-muted-foreground mt-2">Bu bağlantı geçersiz veya süresi dolmuş.</p>
+                    <div className="mt-6">
+                      <Link to="/auth">
+                        <Button className="btn-premium">
+                          <User className="h-5 w-5 mr-2" />
+                          Giriş Yap
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-warning">Davet Kullanılmış</h2>
-                  <p className="text-muted-foreground mt-2">Bu davet bağlantısının kullanım hakkı dolmuş.</p>
+              )}
+
+              {!loading && lookup && exhausted && (
+                <div className="space-y-4">
+                  <div className="mythology-icon">
+                    <Clock className="h-16 w-16 text-warning mx-auto" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-warning">Davet Kullanılmış</h2>
+                    <p className="text-muted-foreground mt-2">Bu davet bağlantısının kullanım hakkı dolmuş.</p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </Card>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Step 1: Inviter Information */}
         {!loading && lookup && !exhausted && !stepOneDone && (
