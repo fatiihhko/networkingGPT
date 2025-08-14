@@ -215,7 +215,7 @@ const cleanupOldRequests = () => {
 
 const sendEmail = async (to: string, subject: string, html: string) => {
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
-  const fromEmail = Deno.env.get('FROM_EMAIL') || 'onboarding@resend.dev';
+  const fromEmail = 'onboarding@resend.dev'; // Use verified domain
 
   if (!resendApiKey) {
     throw new Error('RESEND_API_KEY not configured');
