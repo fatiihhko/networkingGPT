@@ -90,25 +90,24 @@ export const NetworkFlow = () => {
     return { contactMap, rootContacts };
   }, [contacts]);
 
-  // Radial layout algorithm with local orbits for children
+  // Recursive radial layout algorithm - every node places its children in a mini-orbit around itself
   const calculatePositions = (contacts: Contact[], containerWidth: number = 1400, containerHeight: number = 1200) => {
     const positions = new Map<string, { x: number; y: number }>();
     
-    // Radial layout configuration
+    // Recursive radial layout configuration
     const CENTER_X = containerWidth / 2;
     const CENTER_Y = containerHeight / 2;
-    const RING_STEP = 280; // Distance between rings (ΔR)
-    const LOCAL_ORBIT_STEP = 180; // Distance for local orbits (Δr)
-    const MIN_ANGULAR_GAP = 12; // Minimum angular gap in degrees
-    const NODE_RADIUS = 80; // Node collision radius
-    const MIN_RADIAL_GAP = 160; // Minimum distance between nodes
+    const DEPTH_RING_STEP = 260; // Distance between depth rings (ΔR)
+    const LOCAL_ORBIT_STEP = 160; // Distance for local orbits around each node (Δr)
+    const MIN_ANGULAR_GAP = 15; // Minimum angular gap in degrees
+    const MIN_RADIAL_GAP = 140; // Minimum distance between nodes
+    const BASE_NODE_SIZE = 70; // Base node size for collision detection
     
     // Always position Rook Tech at the center
     positions.set("rook-tech", { x: CENTER_X, y: CENTER_Y });
     
     // Build parent-child relationships
     const parentChildMap = new Map<string, Contact[]>();
-    const contactLevels = new Map<string, number>();
     
     // Initialize parent-child mapping
     parentChildMap.set("rook-tech", []);
@@ -126,138 +125,192 @@ export const NetworkFlow = () => {
       }
     });
     
-    // Calculate levels for each contact
-    const calculateLevels = (nodeId: string, level: number) => {
-      contactLevels.set(nodeId, level);
-      const children = parentChildMap.get(nodeId) || [];
-      children.forEach(child => calculateLevels(child.id, level + 1));
-    };
-    
-    calculateLevels("rook-tech", 0);
-    
-    // Position first ring (direct children of root)
-    const firstRingChildren = parentChildMap.get("rook-tech") || [];
-    if (firstRingChildren.length > 0) {
-      positionNodesInRing(firstRingChildren, CENTER_X, CENTER_Y, RING_STEP, positions);
-    }
-    
-    // Position local orbits for each node's children
-    const processedNodes = new Set<string>();
-    processedNodes.add("rook-tech");
-    
-    const processNodeChildren = (nodeId: string) => {
+    // Recursively position nodes starting from root
+    const positionNodeAndChildren = (
+      nodeId: string, 
+      centerX: number, 
+      centerY: number, 
+      depth: number = 0,
+      processedNodes = new Set<string>()
+    ) => {
       if (processedNodes.has(nodeId)) return;
       processedNodes.add(nodeId);
       
       const children = parentChildMap.get(nodeId) || [];
       if (children.length === 0) return;
       
-      const nodePos = positions.get(nodeId);
-      if (!nodePos) return;
-      
-      // Determine orbit radius based on number of children and spacing needs
+      // Calculate adaptive orbit radius based on:
+      // 1. Number of children
+      // 2. Minimum angular spacing requirements
+      // 3. Node size considerations
       const childCount = children.length;
-      let orbitRadius = LOCAL_ORBIT_STEP;
+      let orbitRadius = LOCAL_ORBIT_STEP + (depth * 40); // Increase radius for deeper levels
       
-      // Increase orbit radius if needed to maintain minimum angular gap
-      const requiredPerimeter = childCount * (MIN_RADIAL_GAP * Math.PI / 180) * orbitRadius;
-      const minRadiusForSpacing = requiredPerimeter / (2 * Math.PI);
+      // Calculate minimum radius needed for proper angular spacing
+      const minAngularRadians = (MIN_ANGULAR_GAP * Math.PI) / 180;
+      const minCircumference = childCount * BASE_NODE_SIZE * 1.5; // Node size + padding
+      const minRadiusForSpacing = minCircumference / (2 * Math.PI);
       
-      if (minRadiusForSpacing > orbitRadius) {
-        orbitRadius = minRadiusForSpacing * 1.2; // Add 20% padding
-      }
+      // Use the larger of our base radius or minimum required radius
+      orbitRadius = Math.max(orbitRadius, minRadiusForSpacing);
       
-      // Handle overflow to multiple rings if too many children
-      if (childCount > 12) {
-        const ringsNeeded = Math.ceil(childCount / 8);
-        const childrenPerRing = Math.ceil(childCount / ringsNeeded);
+      // For nodes with many children, distribute across multiple concentric rings
+      if (childCount > 10) {
+        const maxChildrenPerRing = Math.min(8, Math.floor(2 * Math.PI / minAngularRadians));
+        const ringsNeeded = Math.ceil(childCount / maxChildrenPerRing);
         
         for (let ring = 0; ring < ringsNeeded; ring++) {
-          const ringChildren = children.slice(ring * childrenPerRing, (ring + 1) * childrenPerRing);
-          const ringRadius = orbitRadius + (ring * LOCAL_ORBIT_STEP * 0.6);
-          positionNodesInRing(ringChildren, nodePos.x, nodePos.y, ringRadius, positions);
+          const ringStartIndex = ring * maxChildrenPerRing;
+          const ringEndIndex = Math.min((ring + 1) * maxChildrenPerRing, childCount);
+          const ringChildren = children.slice(ringStartIndex, ringEndIndex);
+          const ringRadius = orbitRadius + (ring * LOCAL_ORBIT_STEP * 0.7);
+          
+          positionChildrenInOrbit(
+            ringChildren,
+            centerX,
+            centerY,
+            ringRadius,
+            positions,
+            processedNodes
+          );
         }
       } else {
-        positionNodesInRing(children, nodePos.x, nodePos.y, orbitRadius, positions);
+        // Single ring for smaller number of children
+        positionChildrenInOrbit(
+          children,
+          centerX,
+          centerY,
+          orbitRadius,
+          positions,
+          processedNodes
+        );
       }
       
-      // Recursively process children's children
-      children.forEach(child => processNodeChildren(child.id));
+      // Recursively position grandchildren around their parents
+      children.forEach(child => {
+        const childPos = positions.get(child.id);
+        if (childPos) {
+          positionNodeAndChildren(
+            child.id,
+            childPos.x,
+            childPos.y,
+            depth + 1,
+            processedNodes
+          );
+        }
+      });
     };
     
-    // Process all nodes to position their children
-    firstRingChildren.forEach(child => processNodeChildren(child.id));
-    
-    // Helper function to position nodes in a ring
-    function positionNodesInRing(
-      nodes: Contact[], 
-      centerX: number, 
-      centerY: number, 
-      radius: number, 
-      positions: Map<string, { x: number; y: number }>
-    ) {
-      const nodeCount = nodes.length;
-      if (nodeCount === 0) return;
+    // Helper function to position children in an orbit around their parent
+    const positionChildrenInOrbit = (
+      children: Contact[],
+      centerX: number,
+      centerY: number,
+      radius: number,
+      positions: Map<string, { x: number; y: number }>,
+      processedNodes: Set<string>
+    ) => {
+      const childCount = children.length;
+      if (childCount === 0) return;
       
-      if (nodeCount === 1) {
-        // Single node: position directly above center
-        const angle = -Math.PI / 2; // 12 o'clock position
+      // For single child, position at 12 o'clock (top)
+      if (childCount === 1) {
+        const angle = -Math.PI / 2;
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
-        positions.set(nodes[0].id, { x, y });
+        
+        const finalPos = resolveCollisions(
+          children[0].id,
+          x,
+          y,
+          radius,
+          centerX,
+          centerY,
+          positions
+        );
+        
+        positions.set(children[0].id, finalPos);
         return;
       }
       
-      // Calculate angular step
-      const angularStep = (2 * Math.PI) / nodeCount;
+      // Equal angular spacing for multiple children
+      const angularStep = (2 * Math.PI) / childCount;
       const startAngle = -Math.PI / 2; // Start at 12 o'clock
       
-      nodes.forEach((node, index) => {
-        let angle = startAngle + (index * angularStep);
+      children.forEach((child, index) => {
+        const angle = startAngle + (index * angularStep);
         let x = centerX + radius * Math.cos(angle);
         let y = centerY + radius * Math.sin(angle);
         
-        // Collision detection and resolution
-        let attempts = 0;
-        const maxAttempts = 20;
+        const finalPos = resolveCollisions(
+          child.id,
+          x,
+          y,
+          radius,
+          centerX,
+          centerY,
+          positions
+        );
         
-        while (attempts < maxAttempts) {
-          let hasCollision = false;
-          
-          // Check collision with existing nodes
-          for (const [existingId, existingPos] of positions) {
-            if (existingId !== node.id) {
-              const distance = Math.sqrt(
-                Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2)
-              );
-              
-              if (distance < MIN_RADIAL_GAP) {
-                hasCollision = true;
-                break;
-              }
-            }
-          }
-          
-          if (!hasCollision) {
-            // Check if position is within container bounds
-            const padding = 100;
-            if (x >= padding && x <= containerWidth - padding && 
-                y >= padding && y <= containerHeight - padding) {
+        positions.set(child.id, finalPos);
+      });
+    };
+    
+    // Collision detection and resolution
+    const resolveCollisions = (
+      nodeId: string,
+      x: number,
+      y: number,
+      radius: number,
+      centerX: number,
+      centerY: number,
+      positions: Map<string, { x: number; y: number }>
+    ) => {
+      let currentX = x;
+      let currentY = y;
+      let currentRadius = radius;
+      let attempts = 0;
+      const maxAttempts = 15;
+      
+      while (attempts < maxAttempts) {
+        let hasCollision = false;
+        
+        // Check collision with existing nodes
+        for (const [existingId, existingPos] of positions) {
+          if (existingId !== nodeId) {
+            const distance = Math.sqrt(
+              Math.pow(currentX - existingPos.x, 2) + Math.pow(currentY - existingPos.y, 2)
+            );
+            
+            if (distance < MIN_RADIAL_GAP) {
+              hasCollision = true;
               break;
             }
           }
-          
-          // Adjust position: increase radius slightly and try again
-          angle += (angularStep * 0.1); // Small angular adjustment
-          radius += 20; // Increase radius
-          x = centerX + radius * Math.cos(angle);
-          y = centerY + radius * Math.sin(angle);
-          attempts++;
         }
         
-        positions.set(node.id, { x, y });
-      });
-    }
+        if (!hasCollision) {
+          // Check bounds
+          const padding = 120;
+          if (currentX >= padding && currentX <= containerWidth - padding && 
+              currentY >= padding && currentY <= containerHeight - padding) {
+            return { x: currentX, y: currentY };
+          }
+        }
+        
+        // Resolve collision by increasing orbit radius
+        currentRadius += 30;
+        const angle = Math.atan2(currentY - centerY, currentX - centerX);
+        currentX = centerX + currentRadius * Math.cos(angle);
+        currentY = centerY + currentRadius * Math.sin(angle);
+        attempts++;
+      }
+      
+      return { x: currentX, y: currentY };
+    };
+    
+    // Start recursive positioning from root
+    positionNodeAndChildren("rook-tech", CENTER_X, CENTER_Y, 0);
     
     return positions;
   };
