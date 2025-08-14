@@ -41,6 +41,28 @@ export const InviteLinkManager = () => {
   const [inviteMessage, setInviteMessage] = useState("");
   const [senderName, setSenderName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      console.log("🔐 Checking authentication status...");
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log("🔐 Current user:", user);
+      setUser(user);
+      
+      if (!user) {
+        console.error("🔐 No authenticated user found!");
+        toast({ 
+          title: "Hata", 
+          description: "Lütfen önce giriş yapın", 
+          variant: "destructive" 
+        });
+      }
+    };
+    
+    checkAuth();
+  }, []);
 
   const fetchInviteLinks = async () => {
     const { data, error } = await supabase
@@ -102,59 +124,131 @@ export const InviteLinkManager = () => {
   };
 
   const sendInfoEmail = async () => {
-    if (!emailToSend) return;
+    console.log("📧 sendInfoEmail function called");
+    console.log("📧 emailToSend:", emailToSend);
+    console.log("📧 user:", user);
+    console.log("📧 loading state:", loading);
+    
+    if (!emailToSend) {
+      console.error("📧 No email provided");
+      toast({ title: "Hata", description: "E-posta adresi gerekli", variant: "destructive" });
+      return;
+    }
+
+    if (!user) {
+      console.error("📧 No authenticated user");
+      toast({ title: "Hata", description: "Lütfen önce giriş yapın", variant: "destructive" });
+      return;
+    }
 
     console.log("📧 Starting info email send to:", emailToSend);
     setLoading(true);
+    
     try {
+      console.log("📧 About to call supabase.functions.invoke...");
+      
       const { data, error } = await supabase.functions.invoke("invite-send-info-email", {
         body: {
           email: emailToSend,
+          contactName: "Kullanıcı",
+          inviterName: user.email || "Sistem"
         },
       });
 
       console.log("📧 Info email response:", { data, error });
+      console.log("📧 Response data type:", typeof data);
+      console.log("📧 Response error type:", typeof error);
 
-      if (error) throw error;
+      if (error) {
+        console.error("📧 Supabase function error:", error);
+        throw error;
+      }
 
+      console.log("📧 Email sent successfully!");
       toast({ title: "Başarılı", description: "Bilgilendirme e-postası başarıyla gönderildi!" });
       setShowSendEmailDialog(false);
       setEmailToSend("");
     } catch (error: any) {
-      console.error("📧 Info email error:", error);
-      toast({ title: "Hata", description: error.message || "Email gönderilirken hata oluştu", variant: "destructive" });
+      console.error("📧 Info email error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        fullError: error
+      });
+      toast({ 
+        title: "Hata", 
+        description: error.message || "Email gönderilirken hata oluştu", 
+        variant: "destructive" 
+      });
     } finally {
+      console.log("📧 Setting loading to false");
       setLoading(false);
     }
   };
 
   const sendInviteEmail = async () => {
-    if (!inviteEmail) return;
+    console.log("📧 sendInviteEmail function called");
+    console.log("📧 inviteEmail:", inviteEmail);
+    console.log("📧 inviteMessage:", inviteMessage);
+    console.log("📧 senderName:", senderName);
+    console.log("📧 user:", user);
+    console.log("📧 loading state:", loading);
+
+    if (!inviteEmail) {
+      console.error("📧 No invite email provided");
+      toast({ title: "Hata", description: "E-posta adresi gerekli", variant: "destructive" });
+      return;
+    }
+
+    if (!user) {
+      console.error("📧 No authenticated user");
+      toast({ title: "Hata", description: "Lütfen önce giriş yapın", variant: "destructive" });
+      return;
+    }
 
     console.log("📧 Starting invite email send to:", inviteEmail);
     setLoading(true);
+    
     try {
+      console.log("📧 About to call supabase.functions.invoke for send-invite-email...");
+      
       const { data, error } = await supabase.functions.invoke("send-invite-email", {
         body: {
           email: inviteEmail,
-          message: inviteMessage,
-          senderName: senderName || undefined,
+          message: inviteMessage || "Network GPT'ye katılmaya davetlisiniz!",
+          senderName: senderName || user.email || "Network GPT",
         },
       });
 
       console.log("📧 Invite email response:", { data, error });
+      console.log("📧 Response data type:", typeof data);
+      console.log("📧 Response error type:", typeof error);
 
-      if (error) throw error;
+      if (error) {
+        console.error("📧 Supabase function error:", error);
+        throw error;
+      }
 
+      console.log("📧 Invite email sent successfully!");
       toast({ title: "Başarılı", description: "Davet e-postası başarıyla gönderildi!" });
       setShowSendInviteDialog(false);
       setInviteEmail("");
       setInviteMessage("");
       setSenderName("");
     } catch (error: any) {
-      console.error("📧 Invite email error:", error);
-      toast({ title: "Hata", description: error.message || "Email gönderilirken hata oluştu", variant: "destructive" });
+      console.error("📧 Invite email error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        fullError: error
+      });
+      toast({ 
+        title: "Hata", 
+        description: error.message || "Email gönderilirken hata oluştu", 
+        variant: "destructive" 
+      });
     } finally {
+      console.log("📧 Setting loading to false");
       setLoading(false);
     }
   };
@@ -222,7 +316,15 @@ export const InviteLinkManager = () => {
                   <Button variant="outline" onClick={() => setShowSendInviteDialog(false)}>
                     İptal
                   </Button>
-                  <Button onClick={sendInviteEmail} disabled={loading || !inviteEmail}>
+                  <Button 
+                    onClick={() => {
+                      console.log("📧 Invite email button clicked!");
+                      console.log("📧 Current inviteEmail:", inviteEmail);
+                      console.log("📧 Current loading:", loading);
+                      sendInviteEmail();
+                    }} 
+                    disabled={loading || !inviteEmail}
+                  >
                     {loading ? "Gönderiliyor..." : "Davet Gönder"}
                   </Button>
                 </div>
@@ -256,7 +358,15 @@ export const InviteLinkManager = () => {
                   <Button variant="outline" onClick={() => setShowSendEmailDialog(false)}>
                     İptal
                   </Button>
-                  <Button onClick={sendInfoEmail} disabled={loading || !emailToSend}>
+                  <Button 
+                    onClick={() => {
+                      console.log("📧 Info email button clicked!");
+                      console.log("📧 Current emailToSend:", emailToSend);
+                      console.log("📧 Current loading:", loading);
+                      sendInfoEmail();
+                    }} 
+                    disabled={loading || !emailToSend}
+                  >
                     {loading ? "Gönderiliyor..." : "Gönder"}
                   </Button>
                 </div>
