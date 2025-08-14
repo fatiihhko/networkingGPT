@@ -560,7 +560,7 @@ export const NetworkFlow = () => {
             }}
             nodeColor="hsl(var(--primary))"
             maskColor="hsl(var(--muted) / 0.8)"
-            className="!w-32 !h-24"
+            className="!w-32 !h-24 hidden md:block"
           />
           <Controls 
             style={{ 
@@ -570,6 +570,7 @@ export const NetworkFlow = () => {
               boxShadow: '0 4px 12px hsl(var(--shadow) / 0.1)'
             }}
             showInteractive={false}
+            className="hidden md:block"
           />
           <Background 
             color="hsl(var(--muted-foreground) / 0.1)"
