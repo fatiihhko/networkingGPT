@@ -89,8 +89,8 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
 
       const data = await response.json();
       
-      // If sendEmail is checked and contact has email, send invite via SendGrid
-      if (sendEmail && values.email) {
+      // If contact has email, send invite via SendGrid automatically
+      if (values.email) {
         try {
           const inviteHtml = `
             <!DOCTYPE html>
@@ -478,23 +478,6 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
           </div>
         </Card>
 
-        {/* Email Option */}
-        {inviteToken && (
-          <Card className="modern-card p-6 slide-in" style={{animationDelay: '0.5s'}}>
-            <div className="flex items-center gap-3">
-              <Checkbox 
-                id="sendEmail" 
-                checked={sendEmail} 
-                onCheckedChange={(v) => setSendEmail(!!v)} 
-                className="hover-scale"
-              />
-              <Label htmlFor="sendEmail" className="flex items-center gap-2 cursor-pointer">
-                <Send className="h-4 w-4 text-primary" />
-                Bu kişiye e-posta gönderilsin mi?
-              </Label>
-            </div>
-          </Card>
-        )}
 
         {/* Submit Button */}
         <div className="flex justify-center pt-4 slide-in" style={{animationDelay: '0.6s'}}>
