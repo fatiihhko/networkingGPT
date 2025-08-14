@@ -90,7 +90,7 @@ export const NetworkFlow = () => {
     return { contactMap, rootContacts };
   }, [contacts]);
 
-  // Advanced layout algorithm with dynamic spacing for professional network visualization
+  // Layout algorithm that positions contacts close to their inviter
   const calculatePositions = (contacts: Contact[], containerWidth: number = 800, containerHeight: number = 560) => {
     const positions = new Map<string, { x: number; y: number }>();
     
@@ -101,119 +101,124 @@ export const NetworkFlow = () => {
     // Always position Rook Tech at the center
     positions.set("rook-tech", { x: centerX, y: centerY });
     
-    // Group contacts by hierarchy level
-    const levelGroups = new Map<number, Contact[]>();
+    // Group contacts by their parent/inviter
+    const contactsByParent = new Map<string, Contact[]>();
+    const manuallyAdded: Contact[] = [];
+    
     contacts.forEach(contact => {
-      const level = contact.parent_contact_id ? 
-        (networkStructure.contactMap.get(contact.parent_contact_id)?.level || 1) + 1 : 1;
-      if (!levelGroups.has(level)) {
-        levelGroups.set(level, []);
+      if (contact.parent_contact_id) {
+        if (!contactsByParent.has(contact.parent_contact_id)) {
+          contactsByParent.set(contact.parent_contact_id, []);
+        }
+        contactsByParent.get(contact.parent_contact_id)!.push(contact);
+      } else {
+        manuallyAdded.push(contact);
       }
-      levelGroups.get(level)!.push(contact);
     });
 
-    // Dramatically increased spacing for professional appearance
-    const baseRadius = Math.min(containerWidth, containerHeight) * 0.25; // Increased from 0.3
-    const levelIncrement = Math.max(180, Math.min(containerWidth, containerHeight) * 0.25); // Much larger spacing
-    const minNodeSpacing = Math.max(200, containerWidth * 0.15); // Minimum 200px or 15% of container width
-    const maxAttempts = 20;
+    // Spacing constants
+    const baseRadius = Math.min(containerWidth, containerHeight) * 0.3;
+    const childRadius = 120; // Distance from parent for invited contacts
+    const minNodeSpacing = 100;
+    const padding = 120;
 
-    // Enhanced circular layout with collision avoidance
-    levelGroups.forEach((levelContacts, level) => {
-      const radius = baseRadius + (level - 1) * levelIncrement;
-      const contactCount = levelContacts.length;
-      
-      if (contactCount === 1) {
-        // Single node: place directly on circle
-        const angle = Math.PI / 4; // 45 degrees for visual balance
-        let x = centerX + radius * Math.cos(angle);
-        let y = centerY + radius * Math.sin(angle);
+    // First, position manually added contacts around Rook Tech
+    if (manuallyAdded.length > 0) {
+      const angleStep = (2 * Math.PI) / manuallyAdded.length;
+      manuallyAdded.forEach((contact, index) => {
+        const angle = index * angleStep;
+        let x = centerX + baseRadius * Math.cos(angle);
+        let y = centerY + baseRadius * Math.sin(angle);
         
         // Ensure within bounds
-        const padding = 120;
         x = Math.max(padding, Math.min(containerWidth - padding, x));
         y = Math.max(padding, Math.min(containerHeight - padding, y));
         
-        positions.set(levelContacts[0].id, { x, y });
-        return;
-      }
+        positions.set(contact.id, { x, y });
+      });
+    }
 
-      // Multiple nodes: distribute evenly around circle with extra spacing
-      const angleStep = (2 * Math.PI) / contactCount;
-      const spacingMultiplier = Math.max(1.5, 3 - contactCount * 0.1); // Increase spacing for fewer nodes
+    // Then, position each contact's invited contacts around them
+    const positionChildrenAroundParent = (parentId: string, children: Contact[]) => {
+      const parentPos = positions.get(parentId);
+      if (!parentPos || children.length === 0) return;
+
+      const angleStep = (2 * Math.PI) / children.length;
       
-      levelContacts.forEach((contact, index) => {
-        let attempts = 0;
+      children.forEach((child, index) => {
         let positioned = false;
+        let attempts = 0;
+        const maxAttempts = 10;
         
         while (!positioned && attempts < maxAttempts) {
-          // Calculate base position with spacing multiplier
-          const baseAngle = index * angleStep * spacingMultiplier;
-          const spreadRadius = radius + (attempts * 30); // Increase radius if collisions
+          const angle = index * angleStep + (attempts * 0.3);
+          const distance = childRadius + (attempts * 20);
           
-          let x = centerX + spreadRadius * Math.cos(baseAngle);
-          let y = centerY + spreadRadius * Math.sin(baseAngle);
+          let x = parentPos.x + distance * Math.cos(angle);
+          let y = parentPos.y + distance * Math.sin(angle);
           
-          // Ensure nodes stay within bounds with generous padding
-          const padding = 140;
+          // Ensure within bounds
           x = Math.max(padding, Math.min(containerWidth - padding, x));
           y = Math.max(padding, Math.min(containerHeight - padding, y));
           
-          // Advanced collision detection with larger spacing
+          // Check for collisions
           let hasCollision = false;
           for (const [existingId, existingPos] of positions) {
-            const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
-            if (distance < minNodeSpacing) {
+            const dist = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
+            if (dist < minNodeSpacing) {
               hasCollision = true;
               break;
             }
           }
           
           if (!hasCollision) {
-            positions.set(contact.id, { x, y });
+            positions.set(child.id, { x, y });
             positioned = true;
-          } else {
-            // Try alternative positions with increased radius and angle offset
-            const offsetAngle = baseAngle + (attempts * 0.5);
-            x = centerX + (spreadRadius + attempts * 40) * Math.cos(offsetAngle);
-            y = centerY + (spreadRadius + attempts * 40) * Math.sin(offsetAngle);
             
-            x = Math.max(padding, Math.min(containerWidth - padding, x));
-            y = Math.max(padding, Math.min(containerHeight - padding, y));
-            
-            // Check collision again
-            hasCollision = false;
-            for (const [existingId, existingPos] of positions) {
-              const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
-              if (distance < minNodeSpacing) {
-                hasCollision = true;
-                break;
-              }
-            }
-            
-            if (!hasCollision) {
-              positions.set(contact.id, { x, y });
-              positioned = true;
+            // Recursively position this child's children around them
+            const grandChildren = contactsByParent.get(child.id) || [];
+            if (grandChildren.length > 0) {
+              positionChildrenAroundParent(child.id, grandChildren);
             }
           }
           
           attempts++;
         }
         
-        // Fallback: force position if all attempts failed
+        // Fallback if positioning failed
         if (!positioned) {
-          const fallbackAngle = index * angleStep + (Math.PI / 4);
-          const fallbackRadius = radius + (attempts * 50);
-          let x = centerX + fallbackRadius * Math.cos(fallbackAngle);
-          let y = centerY + fallbackRadius * Math.sin(fallbackAngle);
+          const fallbackAngle = index * angleStep;
+          const fallbackDistance = childRadius + (attempts * 30);
+          let x = parentPos.x + fallbackDistance * Math.cos(fallbackAngle);
+          let y = parentPos.y + fallbackDistance * Math.sin(fallbackAngle);
           
-          const padding = 140;
           x = Math.max(padding, Math.min(containerWidth - padding, x));
           y = Math.max(padding, Math.min(containerHeight - padding, y));
           
-          positions.set(contact.id, { x, y });
+          positions.set(child.id, { x, y });
+          
+          // Still try to position grandchildren
+          const grandChildren = contactsByParent.get(child.id) || [];
+          if (grandChildren.length > 0) {
+            positionChildrenAroundParent(child.id, grandChildren);
+          }
         }
       });
+    };
+
+    // Position children around Rook Tech (manually added contacts)
+    manuallyAdded.forEach(parent => {
+      const children = contactsByParent.get(parent.id) || [];
+      positionChildrenAroundParent(parent.id, children);
+    });
+
+    // Position children around other parents who might not be manually added
+    contactsByParent.forEach((children, parentId) => {
+      if (!positions.has(parentId)) {
+        // Parent is not positioned yet, skip for now
+        return;
+      }
+      // Children should already be positioned in the recursive call above
     });
 
     return positions;
