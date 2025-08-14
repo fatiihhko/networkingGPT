@@ -61,7 +61,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   const smtpSecure = Deno.env.get('SMTP_SECURE');
   const smtpUser = Deno.env.get('SMTP_USER');
   const smtpPass = Deno.env.get('SMTP_PASS');
-  const fromEmail = Deno.env.get('FROM_EMAIL') || 'marketing@rooktech.ai';
+  const fromEmail = Deno.env.get('FROM_EMAIL') || 'eda@rooktech.ai';
 
   if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
     throw new Error('SMTP configuration not complete');
