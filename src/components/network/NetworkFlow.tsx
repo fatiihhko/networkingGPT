@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, memo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Contact } from "./types";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Mail, Phone, Building2, Users, Crown, UserCheck } from "lucide-react";
 import { StatsBar } from "./StatsBar";
+import { NetworkFlowSkeleton } from "@/components/ui/loading-skeleton";
 
 interface NetworkContact extends Contact {
   level: number;
@@ -18,21 +19,58 @@ interface NetworkContact extends Contact {
   isRoot: boolean;
 }
 
-export const NetworkFlow = () => {
+// Memoized contact tooltip component for better performance
+const ContactTooltip = memo(({ contact, networkContact, hasChildren }: {
+  contact: Contact;
+  networkContact: NetworkContact;
+  hasChildren: boolean;
+}) => (
+  <TooltipContent 
+    className="glass-dark max-w-xs z-[10000] bg-popover/95 backdrop-blur-md border border-border/50 shadow-2xl"
+    side="top"
+    sideOffset={10}
+  >
+    <div className="space-y-2 relative z-[10000]">
+      <div className="font-semibold">{contact.first_name} {contact.last_name}</div>
+      <div className="text-sm text-muted-foreground">E-posta: {contact.email || "-"}</div>
+      <div className="text-sm text-muted-foreground">Meslek: {contact.profession || "-"}</div>
+      <div className="text-sm text-muted-foreground">Şehir: {contact.city || "-"}</div>
+      <div className="text-sm text-muted-foreground">Telefon: {contact.phone || "-"}</div>
+      <div className="text-sm text-muted-foreground">Yakınlık: {contact.relationship_degree}/10</div>
+      <div className="text-sm text-muted-foreground">Seviye: {networkContact.level}</div>
+      {hasChildren && (
+        <div className="text-sm text-primary">Davet ettiği: {networkContact.children.length} kişi</div>
+      )}
+      {contact.services?.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Hizmetler: {contact.services.join(", ")}
+        </div>
+      )}
+      {contact.tags?.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Etiketler: {contact.tags.join(", ")}
+        </div>
+      )}
+    </div>
+  </TooltipContent>
+));
+
+const NetworkFlow = memo(() => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
-      const { data } = await supabase.from("contacts").select("*").order("created_at", { ascending: true });
-      setContacts((data || []) as Contact[]);
-      setIsLoading(false);
-    };
-    load();
+  const loadContacts = useCallback(async () => {
+    setIsLoading(true);
+    const { data } = await supabase.from("contacts").select("*").order("created_at", { ascending: true });
+    setContacts((data || []) as Contact[]);
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadContacts();
+  }, [loadContacts]);
 
   useEffect(() => {
     const channel = supabase
@@ -40,17 +78,14 @@ export const NetworkFlow = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "contacts" },
-        async () => {
-          const { data } = await supabase.from("contacts").select("*").order("created_at", { ascending: true });
-          setContacts((data || []) as Contact[]);
-        }
+        loadContacts
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadContacts]);
 
   // Build hierarchical structure
   const networkStructure = useMemo(() => {
@@ -370,34 +405,11 @@ export const NetworkFlow = () => {
                      )}
                    </div>
                  </TooltipTrigger>
-                 <TooltipContent 
-                   className="glass-dark max-w-xs z-[10000] bg-popover/95 backdrop-blur-md border border-border/50 shadow-2xl"
-                   side="top"
-                   sideOffset={10}
-                 >
-                   <div className="space-y-2 relative z-[10000]">
-                     <div className="font-semibold">{contact.first_name} {contact.last_name}</div>
-                     <div className="text-sm text-muted-foreground">E-posta: {contact.email || "-"}</div>
-                     <div className="text-sm text-muted-foreground">Meslek: {contact.profession || "-"}</div>
-                     <div className="text-sm text-muted-foreground">Şehir: {contact.city || "-"}</div>
-                     <div className="text-sm text-muted-foreground">Telefon: {contact.phone || "-"}</div>
-                     <div className="text-sm text-muted-foreground">Yakınlık: {contact.relationship_degree}/10</div>
-                     <div className="text-sm text-muted-foreground">Seviye: {networkContact.level}</div>
-                     {hasChildren && (
-                       <div className="text-sm text-primary">Davet ettiği: {networkContact.children.length} kişi</div>
-                     )}
-                     {contact.services?.length > 0 && (
-                       <div className="text-sm text-muted-foreground">
-                         Hizmetler: {contact.services.join(", ")}
-                       </div>
-                     )}
-                     {contact.tags?.length > 0 && (
-                       <div className="text-sm text-muted-foreground">
-                         Etiketler: {contact.tags.join(", ")}
-                       </div>
-                     )}
-                   </div>
-                 </TooltipContent>
+                  <ContactTooltip 
+                    contact={contact} 
+                    networkContact={networkContact} 
+                    hasChildren={hasChildren} 
+                  />
                </Tooltip>
              </div>
            ),
@@ -781,4 +793,6 @@ export const NetworkFlow = () => {
       </div>
     </div>
   );
-};
+});
+
+export { NetworkFlow };

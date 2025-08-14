@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,11 @@ import { ContactForm } from "@/components/network/ContactForm";
 import { ContactList } from "@/components/network/ContactList";
 import { NetworkFlow } from "@/components/network/NetworkFlow";
 
-
-
 import { ContactsProvider } from "@/components/network/ContactsContext";
 import { AIAssistant } from "@/components/network/AIAssistant";
 import { UserPlus, List as ListIcon, Share2, Bot, LogOut, Sparkles, Map } from "lucide-react";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { ContactFormSkeleton, ContactListSkeleton, NetworkFlowSkeleton } from "@/components/ui/loading-skeleton";
 
 
 
@@ -218,26 +218,36 @@ const Network = () => {
 
           {/* Content area for desktop */}
           <Card className="modern-card marble-texture p-6 hover-lift">
-            {activeTab === "add" && (
-              <div className="fade-in">
-                <ContactForm />
-              </div>
-            )}
-            {activeTab === "list" && (
-              <div className="fade-in">
-                <ContactList />
-              </div>
-            )}
-            {activeTab === "map" && (
-              <div className="fade-in">
-                <NetworkFlow />
-              </div>
-            )}
-            {activeTab === "ai" && (
-              <div className="fade-in">
-                <AIAssistant />
-              </div>
-            )}
+            <ErrorBoundary>
+              {activeTab === "add" && (
+                <div className="fade-in">
+                  <Suspense fallback={<ContactFormSkeleton />}>
+                    <ContactForm />
+                  </Suspense>
+                </div>
+              )}
+              {activeTab === "list" && (
+                <div className="fade-in">
+                  <Suspense fallback={<ContactListSkeleton />}>
+                    <ContactList />
+                  </Suspense>
+                </div>
+              )}
+              {activeTab === "map" && (
+                <div className="fade-in">
+                  <Suspense fallback={<NetworkFlowSkeleton />}>
+                    <NetworkFlow />
+                  </Suspense>
+                </div>
+              )}
+              {activeTab === "ai" && (
+                <div className="fade-in">
+                  <Suspense fallback={<div className="loading-spinner mx-auto" />}>
+                    <AIAssistant />
+                  </Suspense>
+                </div>
+              )}
+            </ErrorBoundary>
           </Card>
         </div>
 
@@ -245,18 +255,28 @@ const Network = () => {
         <div className="md:hidden">
           <Card className="modern-card p-4 hover-lift">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsContent value="add" className="fade-in">
-                <ContactForm />
-              </TabsContent>
-              <TabsContent value="list" className="fade-in">
-                <ContactList />
-              </TabsContent>
-              <TabsContent value="map" className="fade-in">
-                <NetworkFlow />
-              </TabsContent>
-              <TabsContent value="ai" className="fade-in">
-                <AIAssistant />
-              </TabsContent>
+              <ErrorBoundary>
+                <TabsContent value="add" className="fade-in">
+                  <Suspense fallback={<ContactFormSkeleton />}>
+                    <ContactForm />
+                  </Suspense>
+                </TabsContent>
+                <TabsContent value="list" className="fade-in">
+                  <Suspense fallback={<ContactListSkeleton />}>
+                    <ContactList />
+                  </Suspense>
+                </TabsContent>
+                <TabsContent value="map" className="fade-in">
+                  <Suspense fallback={<NetworkFlowSkeleton />}>
+                    <NetworkFlow />
+                  </Suspense>
+                </TabsContent>
+                <TabsContent value="ai" className="fade-in">
+                  <Suspense fallback={<div className="loading-spinner mx-auto" />}>
+                    <AIAssistant />
+                  </Suspense>
+                </TabsContent>
+              </ErrorBoundary>
             </Tabs>
           </Card>
         </div>

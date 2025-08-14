@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, memo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { UserPlus, MapPin, Briefcase, Phone, Mail, Heart, Tag, FileText, Send } from "lucide-react";
+import { ContactFormSkeleton } from "@/components/ui/loading-skeleton";
 
 const schema = z.object({
   first_name: z.string().min(1, "Zorunlu"),
@@ -26,7 +27,7 @@ const schema = z.object({
   description: z.string().optional(),
 });
 
-export const ContactForm = ({
+const ContactForm = memo(({
   parentContactId,
   onSuccess,
   inviteToken,
@@ -382,4 +383,6 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
       </form>
     </div>
   );
-};
+});
+
+export { ContactForm };
