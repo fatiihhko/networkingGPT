@@ -72,7 +72,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
         subject: subject
       }
     ],
-    from: { email: "noreply@agrgpt.com", name: "Ağ GPT" },
+    from: { email: "noreply@lovable.app", name: "Ağ GPT" },
     content: [
       {
         type: "text/html",
