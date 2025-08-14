@@ -225,51 +225,126 @@ serve(async (req: Request) => {
     const shouldSendEmail = shouldSendEmailFlag && contact.email && inviteData && 
       ((result.remaining_uses !== null && result.remaining_uses >= 0) || result.chain_status === "active");
 
-    // Opsiyonel e‑posta (takip daveti)
+    // Opsiyonel e‑posta (bilgi maili)
     if (shouldSendEmail) {
       try {
-        // invite_chains relation obj/array olabilir
-        const chainRel = Array.isArray(inviteData.invite_chains)
-          ? inviteData.invite_chains[0]
-          : inviteData.invite_chains;
+        const inviterFullName =
+          [inviteData.inviter_first_name, inviteData.inviter_last_name]
+            .filter(Boolean)
+            .join(" ") || "Bir arkadaşınız";
 
-        // Zincir bilgilerini kullanarak email gönderim kontrolü
-        if (chainRel) {
-          // Email göndermek için: zincir sınırsız VEYA hala kalan kullanım var VEYA az önce 0'a düştü
-          const canSendFollowUp = 
-            chainRel.max_uses === 0 || // sınırsız
-            (result.remaining_uses !== null && result.remaining_uses >= 0); // hala kullanım var veya az önce bitti
+        const contactFullName = `${contact.first_name} ${contact.last_name}`;
 
-          if (canSendFollowUp) {
-            const newToken = crypto.randomUUID();
+        // Bilgi maili gönder - kişiye Network GPT'ye eklendiğini bildir
+        const subject = "Network GPT Ağına Eklendiğiniz Bildirimi";
+        const html = `
+          <!DOCTYPE html>
+          <html lang="tr">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Network GPT Ağına Hoş Geldiniz</title>
+            <style>
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+                line-height: 1.6; 
+                color: #333; 
+                max-width: 600px; 
+                margin: 0 auto; 
+                padding: 20px;
+                background-color: #f8f9fa;
+              }
+              .container {
+                background: white;
+                padding: 40px;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 30px;
+              }
+              .logo {
+                font-size: 28px;
+                font-weight: bold;
+                color: #8B5CF6;
+                margin-bottom: 10px;
+              }
+              .title {
+                color: #1F2937;
+                font-size: 24px;
+                margin-bottom: 20px;
+              }
+              .content {
+                color: #4B5563;
+                margin-bottom: 25px;
+              }
+              .features {
+                background: #F3F4F6;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 25px 0;
+              }
+              .features ul {
+                margin: 0;
+                padding-left: 20px;
+              }
+              .features li {
+                margin-bottom: 8px;
+                color: #374151;
+              }
+              .footer {
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #E5E7EB;
+                text-align: center;
+                color: #6B7280;
+                font-size: 14px;
+              }
+              .highlight {
+                color: #8B5CF6;
+                font-weight: 600;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="logo">🤖 Network GPT</div>
+                <h1 class="title">Ağımıza Hoş Geldiniz!</h1>
+              </div>
+              
+              <div class="content">
+                <p>Merhaba <span class="highlight">${contactFullName}</span>!</p>
+                
+                <p><span class="highlight">${inviterFullName}</span> sizi Network GPT profesyonel ağına ekledi.</p>
+                
+                <div class="features">
+                  <p><strong>Artık platform üzerinden:</strong></p>
+                  <ul>
+                    <li>📊 Profesyonel bağlantılarınızı yönetebilirsiniz</li>
+                    <li>👥 Yeni kişiler ekleyebilirsiniz</li>
+                    <li>🌐 Ağınızı genişletebilirsiniz</li>
+                    <li>📝 İletişim bilgilerinizi güncelleyebilirsiniz</li>
+                    <li>🤖 AI destekli analizler yapabilirsiniz</li>
+                  </ul>
+                </div>
+                
+                <p>Herhangi bir sorunuz olursa bu e-postaya yanıt verebilirsiniz.</p>
+              </div>
+              
+              <div class="footer">
+                <p>Bu e-posta Network GPT platformu tarafından gönderilmiştir.</p>
+                <p>© 2024 Network GPT - AI Destekli Ağ Yönetimi</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
 
-            const { error: newInvErr } = await admin.from("invites").insert({
-              token: newToken,
-              owner_user_id: inviteData.owner_user_id,
-              inviter_contact_id: insertedContactId,
-              chain_id: inviteData.chain_id,
-              max_uses: 0, // bireysel davette kullanım takibi yapmıyoruz; zincir takip ediyor
-            });
+        await sendEmail(contact.email!, subject, html);
+        console.log("Info email sent successfully to:", contact.email);
 
-            if (newInvErr) throw newInvErr;
-
-            const inviterFullName =
-              [inviteData.inviter_first_name, inviteData.inviter_last_name]
-                .filter(Boolean)
-                .join(" ") || "Bir davet eden";
-
-            const base = (base_url || "").replace(/\/$/, "");
-            const newInviteLink = `${base}/invite/${newToken}`;
-
-            await sendEmail(contact.email!, "Network GPT Davetiyesi", `
-              <p><strong>${inviterFullName}</strong> sizi Networking GPT ağına ekledi. 
-              Eğer siz de başkalarını eklemek isterseniz aşağıdaki davet bağlantısını kullanabilirsiniz.</p>
-              <p><a href="${newInviteLink}">${newInviteLink}</a></p>
-            `);
-          } else {
-            console.log("Follow-up invite not created: chain exhausted or inactive");
-          }
-        }
       } catch (mailErr) {
         console.error("Email send failed:", (mailErr as Error)?.message || mailErr);
       }
