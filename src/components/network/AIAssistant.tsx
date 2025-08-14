@@ -253,12 +253,18 @@ export const AIAssistant = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center p-8">
-                <div className="text-muted-foreground mb-4">
-                  Üzgünüm, ağında istediğin kriterlere uygun yeterli kişi bulamadım. 😔
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Daha fazla kişi ekleyerek ağını genişletmeyi deneyebilirsin!
+              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Bot className="h-5 w-5 text-orange-600 mt-0.5" />
+                  <div>
+                    <div className="font-medium text-orange-800 dark:text-orange-200 mb-1">
+                      Mehmet
+                    </div>
+                    <div className="text-sm text-orange-700 dark:text-orange-300">
+                      Tamam, benim tanıdıklarımdan sadece {suggestedTeam.length} kişi çıktı istediğin kriterlere uygun. 
+                      {suggestedTeam.length > 0 ? ' Bu kadarı ile başlayabilirsin!' : ' Daha fazla kişi eklemen gerekebilir.'} 😊
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
