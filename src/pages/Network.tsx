@@ -66,19 +66,6 @@ const InviteButtonInline = () => {
           <DialogTitle className="gradient-text">Davetiye Bağlantısı Oluştur</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Kullanım limiti (0 = sınırsız)</Label>
-            <Input
-              type="number"
-              min={0}
-              value={maxUses}
-              onChange={(e) => {
-                const v = parseInt(e.target.value, 10);
-                setMaxUses(Number.isNaN(v) ? 0 : Math.max(0, v));
-              }}
-              className="hover-scale"
-            />
-          </div>
           <div className="flex items-center gap-2">
             <Button onClick={createInvite} className="btn-modern hover-lift">
               <Sparkles className="h-4 w-4 mr-2" />
@@ -140,15 +127,6 @@ const Network = () => {
                   <DialogTitle className="gradient-text">Davet Bağlantısı Oluştur</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Kullanım limiti (0 = sınırsız)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      defaultValue={0}
-                      className="hover-scale"
-                    />
-                  </div>
                   <Button className="btn-modern hover-lift w-full">
                     <Sparkles className="h-4 w-4 mr-2" />
                     Bağlantı Oluştur
