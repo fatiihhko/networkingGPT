@@ -216,8 +216,8 @@ const Network = () => {
                   {activeTab === "list" && <div className="menu-card-indicator" />}
                 </div>
                 <div className="menu-card-body">
-                  <h3 className="menu-card-title">Ağ Listesi</h3>
-                  <p className="menu-card-description">Tüm bağlantılarınızı görün</p>
+                  <h3 className="menu-card-title text-white">Ağ Listesi</h3>
+                  <p className="menu-card-description text-white">Tüm bağlantılarınızı görün</p>
                 </div>
               </div>
             </div>
@@ -318,8 +318,8 @@ const Network = () => {
                   : "text-muted-foreground hover:text-foreground"
               } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
             >
-              <ListIcon className="h-5 w-5" />
-              <span className="text-xs">Ağ Listesi</span>
+              <ListIcon className="h-5 w-5 text-white" />
+              <span className="text-xs text-white">Ağ Listesi</span>
             </button>
             <button
               type="button"

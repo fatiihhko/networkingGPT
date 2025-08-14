@@ -67,8 +67,8 @@ const ContactList = memo(() => {
       {/* Header */}
       <div className="text-center space-y-2 fade-in">
         <div className="flex items-center justify-center gap-2">
-          <Users className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold gradient-text">Ağ Listesi</h2>
+          <Users className="h-6 w-6 text-white" />
+          <h2 className="text-2xl font-bold text-white">Ağ Listesi</h2>
         </div>
         <p className="text-muted-foreground">
           {filteredContacts.length} kişi bulundu
