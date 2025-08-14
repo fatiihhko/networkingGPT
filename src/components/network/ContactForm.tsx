@@ -305,7 +305,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         {/* Personal Information Card */}
         <Card className="modern-card p-6 space-y-4 slide-in">
           <div className="flex items-center gap-2 mb-4">
-            <UserPlus className="h-5 w-5 text-primary" />
+            <UserPlus className="h-5 w-5 text-white" />
             <h3 className="font-semibold">Kişisel Bilgiler</h3>
           </div>
           
@@ -338,7 +338,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         {/* Contact Information Card */}
         <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.1s'}}>
           <div className="flex items-center gap-2 mb-4">
-            <Phone className="h-5 w-5 text-primary" />
+            <Phone className="h-5 w-5 text-white" />
             <h3 className="font-semibold">İletişim Bilgileri</h3>
           </div>
           
@@ -394,7 +394,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         {/* Relationship Card */}
         <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.2s'}}>
           <div className="flex items-center gap-2 mb-4">
-            <Heart className="h-5 w-5 text-primary" />
+            <Heart className="h-5 w-5 text-white" />
             <h3 className="font-semibold">Yakınlık Seviyesi</h3>
           </div>
           
@@ -431,7 +431,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         {/* Services & Tags Card */}
         <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.3s'}}>
           <div className="flex items-center gap-2 mb-4">
-            <Tag className="h-5 w-5 text-primary" />
+            <Tag className="h-5 w-5 text-white" />
             <h3 className="font-semibold">Hizmetler ve Özellikler</h3>
           </div>
           
@@ -464,7 +464,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         {/* Description Card */}
         <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.4s'}}>
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="h-5 w-5 text-primary" />
+            <FileText className="h-5 w-5 text-white" />
             <h3 className="font-semibold">Açıklama</h3>
           </div>
           
