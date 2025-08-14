@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.invite-send-info-email]
 verify_jwt = true
+
+[functions.send-invite-smtp]
+verify_jwt = false

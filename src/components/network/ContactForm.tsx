@@ -53,6 +53,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
   // If inviteToken exists, submit via Edge Function (no auth required)
   if (inviteToken) {
     try {
+      // First, submit the contact
       const response = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/invite-submit-new`, {
         method: 'POST',
         headers: {
@@ -62,7 +63,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         },
         body: JSON.stringify({
           token: inviteToken,
-          sendEmail,
+          sendEmail: false, // We'll handle email separately with SMTP
           base_url: window.location.origin,
           contact: {
             first_name: values.first_name,
@@ -88,7 +89,56 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
 
       const data = await response.json();
       
-      toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+      // If sendEmail is checked and contact has email, send invite via SMTP
+      if (sendEmail && values.email) {
+        try {
+          const emailResponse = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/send-invite-smtp`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: values.email,
+              inviteUrl: `${window.location.origin}/invite/${inviteToken}`,
+              projectName: 'Ağ GPT'
+            })
+          });
+
+          if (!emailResponse.ok) {
+            const emailError = await emailResponse.json().catch(() => ({ error: 'E-posta gönderilemedi' }));
+            console.warn('Email sending failed:', emailError);
+            toast({ 
+              title: "Kişi eklendi", 
+              description: "Kişi eklendi ancak e-posta gönderilemedi.", 
+              variant: "default" 
+            });
+          } else {
+            const emailData = await emailResponse.json();
+            if (emailData.ok) {
+              toast({ 
+                title: "Başarılı!", 
+                description: "Kişi eklendi ve bilgi e-postası gönderildi." 
+              });
+            } else {
+              toast({ 
+                title: "Kişi eklendi", 
+                description: "Kişi eklendi ancak e-posta gönderilemedi.", 
+                variant: "default" 
+              });
+            }
+          }
+        } catch (emailError: any) {
+          console.warn('Email sending error:', emailError);
+          toast({ 
+            title: "Kişi eklendi", 
+            description: "Kişi eklendi ancak e-posta gönderilemedi.", 
+            variant: "default" 
+          });
+        }
+      } else {
+        toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
+      }
+      
       onSuccess?.(data?.contact ?? null, values, sendEmail);
     } catch (error: any) {
       toast({ title: "Kaydedilemedi", description: error.message || "Bilinmeyen hata", variant: "destructive" });
