@@ -21,7 +21,7 @@ export const InviteLinkLanding = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [step, setStep] = useState<'welcome' | 'self-add' | 'add-others'>('welcome');
+  const [step, setStep] = useState<'welcome' | 'self-add' | 'add-others'>('self-add');
   const [selfContact, setSelfContact] = useState<any>(null);
 
   const fetchLinkInfo = async () => {
@@ -300,12 +300,6 @@ export const InviteLinkLanding = () => {
 
                 {step === 'self-add' && (
                   <div className="space-y-4">
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold mb-2">Kendinizi Ekleyin</h3>
-                      <p className="text-muted-foreground">
-                        Ağınızın merkezi olacak kişi olarak kendinizi ekleyin.
-                      </p>
-                    </div>
                     <ContactForm 
                       inviteToken={token}
                       onSuccess={(contact, values) => handleSelfAdd(values)}

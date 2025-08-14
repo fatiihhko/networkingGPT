@@ -48,6 +48,15 @@ const form = useForm<z.infer<typeof schema>>({
   resolver: zodResolver(isSelfAdd ? selfAddSchema : schema),
   defaultValues: {
     relationship_degree: 5,
+    first_name: "",
+    last_name: "",
+    email: "",
+    city: "",
+    profession: "",
+    services: "",
+    tags: "",
+    phone: "",
+    description: "",
   },
 });
 const [sendEmail, setSendEmail] = useState(false);
@@ -55,6 +64,18 @@ const [isSubmitting, setIsSubmitting] = useState(false);
 
 const onSubmit = async (values: z.infer<typeof schema>) => {
   setIsSubmitting(true);
+  
+  // If it's self-add, only use the basic fields
+  if (isSelfAdd) {
+    onSuccess?.({ 
+      first_name: values.first_name,
+      last_name: values.last_name,
+      email: values.email
+    }, values);
+    setIsSubmitting(false);
+    return;
+  }
+
   const servicesArr = values.services?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
   const tagsArr = values.tags?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
 
