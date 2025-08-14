@@ -118,7 +118,9 @@ export const InviteLinkManager = () => {
   };
 
   const copyLink = (token: string) => {
-    const url = `${window.location.origin}/invite-link/${token}`;
+    // Production domain kullan
+    const baseUrl = window.location.hostname === 'networkgpt.tech' ? 'https://networkgpt.tech' : window.location.origin;
+    const url = `${baseUrl}/invite-link/${token}`;
     navigator.clipboard.writeText(url);
     toast({ title: "Kopyalandı", description: "Davet bağlantısı panoya kopyalandı" });
   };
