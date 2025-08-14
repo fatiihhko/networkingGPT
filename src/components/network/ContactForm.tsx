@@ -31,10 +31,12 @@ const ContactForm = memo(({
   parentContactId,
   onSuccess,
   inviteToken,
+  isSelfAdd = false,
 }: {
   parentContactId?: string;
   onSuccess?: (contact: any, values: z.infer<typeof schema>, sendEmail?: boolean) => void;
   inviteToken?: string;
+  isSelfAdd?: boolean;
 }) => {
 const form = useForm<z.infer<typeof schema>>({
   resolver: zodResolver(schema),
@@ -296,9 +298,16 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
       <div className="text-center space-y-2 fade-in">
         <div className="flex items-center justify-center gap-2">
           <UserPlus className="h-6 w-6 text-white" />
-          <h2 className="text-2xl font-bold text-white">Yeni Kişi Ekle</h2>
+          <h2 className="text-2xl font-bold text-white">
+            {isSelfAdd ? "Kendinizi Ekleyin" : "Yeni Kişi Ekle"}
+          </h2>
         </div>
-        <p className="text-muted-foreground">Ağınıza yeni bir bağlantı ekleyin</p>
+        <p className="text-muted-foreground">
+          {isSelfAdd 
+            ? "Ağınızın merkezi olacak kişi olarak kendinizi ekleyin" 
+            : "Ağınıza yeni bir bağlantı ekleyin"
+          }
+        </p>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -494,7 +503,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
             ) : (
               <>
                 <UserPlus className="h-5 w-5 mr-2" />
-                Kişiyi Kaydet
+                {isSelfAdd ? "Kendimi Kaydet" : "Kişiyi Kaydet"}
               </>
             )}
           </Button>

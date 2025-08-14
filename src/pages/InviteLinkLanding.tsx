@@ -21,6 +21,8 @@ export const InviteLinkLanding = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState<'welcome' | 'self-add' | 'add-others'>('welcome');
+  const [selfContact, setSelfContact] = useState<any>(null);
 
   const fetchLinkInfo = async () => {
     if (!token) {
@@ -82,15 +84,59 @@ export const InviteLinkLanding = () => {
     }
   };
 
-  const handleContactSubmit = async (contactData: any, sendEmail: boolean = false) => {
+  const handleSelfAdd = async (contactData: any) => {
     if (!token || !linkInfo) return;
 
     setSubmitting(true);
     try {
+      // First, add the person themselves to the system
       const { data, error } = await supabase.functions.invoke("invite-submit", {
         body: {
           token,
           contact: contactData,
+          sendEmail: false,
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Hata",
+          description: error.message || "Kişi eklenirken hata oluştu",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSelfContact(data);
+      setStep('add-others');
+      toast({
+        title: "Hoş geldiniz!",
+        description: "Başarıyla sisteme eklendiniz. Şimdi tanıdıklarınızı ekleyebilirsiniz.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Hata",
+        description: err.message || "Beklenmeyen bir hata oluştu",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAddOthers = async (contactData: any, sendEmail: boolean = false) => {
+    if (!token || !linkInfo) return;
+
+    setSubmitting(true);
+    try {
+      // Add others with the self contact as parent
+      const { data, error } = await supabase.functions.invoke("invite-submit", {
+        body: {
+          token,
+          contact: {
+            ...contactData,
+            parent_contact_id: selfContact?.id || null,
+          },
           sendEmail,
         },
       });
@@ -226,20 +272,59 @@ export const InviteLinkLanding = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold mb-2">Yeni Kişi Ekle</h3>
-                  <p className="text-muted-foreground">
-                    Ağa eklemek istediğiniz kişinin bilgilerini girin.
-                    <br />
-                    <span className="text-sm">
-                      {isUnlimited ? "Sınırsız kullanım" : `Kalan slot: ${remainingSlots}`}
-                    </span>
-                  </p>
-                </div>
-                <ContactForm 
-                  inviteToken={token}
-                  onSuccess={(contact, values, sendEmail) => handleContactSubmit(values, sendEmail)}
-                />
+                {step === 'welcome' && (
+                  <div className="text-center space-y-4">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-2">Networking GPT'e Hoş Geldiniz!</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Ağınızı oluşturmaya başlamak için önce kendinizi sisteme ekleyin.
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => setStep('self-add')}
+                      className="w-full"
+                      size="lg"
+                    >
+                      Kendimi Ekle
+                    </Button>
+                  </div>
+                )}
+
+                {step === 'self-add' && (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-2">Kendinizi Ekleyin</h3>
+                      <p className="text-muted-foreground">
+                        Ağınızın merkezi olacak kişi olarak kendinizi ekleyin.
+                      </p>
+                    </div>
+                    <ContactForm 
+                      inviteToken={token}
+                      onSuccess={(contact, values) => handleSelfAdd(values)}
+                      isSelfAdd={true}
+                    />
+                  </div>
+                )}
+
+                {step === 'add-others' && (
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-2">Tanıdıklarınızı Ekleyin</h3>
+                      <p className="text-muted-foreground">
+                        Ağınıza eklemek istediğiniz kişilerin bilgilerini girin.
+                        <br />
+                        <span className="text-sm">
+                          {isUnlimited ? "Sınırsız kullanım" : `Kalan slot: ${remainingSlots}`}
+                        </span>
+                      </p>
+                    </div>
+                    <ContactForm 
+                      inviteToken={token}
+                      onSuccess={(contact, values, sendEmail) => handleAddOthers(values, sendEmail)}
+                      isSelfAdd={false}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
