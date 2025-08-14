@@ -90,139 +90,154 @@ export const NetworkFlow = () => {
     return { contactMap, rootContacts };
   }, [contacts]);
 
-  // Advanced layout algorithm with dynamic spacing for professional network visualization
-  const calculatePositions = (contacts: Contact[], containerWidth: number = 800, containerHeight: number = 560) => {
+  // Hierarchical tree layout algorithm with strict top-to-bottom positioning
+  const calculatePositions = (contacts: Contact[], containerWidth: number = 1200, containerHeight: number = 900) => {
     const positions = new Map<string, { x: number; y: number }>();
     
-    // Responsive center calculations
+    // Tree layout configuration
+    const RANK_SEPARATION = 260; // Vertical spacing between levels
+    const NODE_SEPARATION = 140; // Horizontal spacing between siblings
+    const ROOT_Y = 80; // Top margin for root node
+    const NODE_WIDTH = 140;
+    const NODE_HEIGHT = 140;
+    
+    // Center position for root
     const centerX = containerWidth / 2;
-    const centerY = containerHeight / 2;
     
-    // Always position Rook Tech at the center
-    positions.set("rook-tech", { x: centerX, y: centerY });
+    // Always position Rook Tech at the top center
+    positions.set("rook-tech", { x: centerX, y: ROOT_Y });
     
-    // Group contacts by hierarchy level
+    // Build hierarchical structure with levels
     const levelGroups = new Map<number, Contact[]>();
+    const contactLevels = new Map<string, number>();
+    
+    // Assign levels to contacts
     contacts.forEach(contact => {
-      const level = contact.parent_contact_id ? 
-        (networkStructure.contactMap.get(contact.parent_contact_id)?.level || 1) + 1 : 1;
+      let level = 1; // Start at level 1 (Rook Tech is level 0)
+      
+      if (contact.parent_contact_id) {
+        const parentLevel = contactLevels.get(contact.parent_contact_id) || 0;
+        level = parentLevel + 1;
+      }
+      
+      contactLevels.set(contact.id, level);
+      
       if (!levelGroups.has(level)) {
         levelGroups.set(level, []);
       }
       levelGroups.get(level)!.push(contact);
     });
-
-    // Dramatically increased spacing for professional appearance
-    const baseRadius = Math.min(containerWidth, containerHeight) * 0.25; // Increased from 0.3
-    const levelIncrement = Math.max(180, Math.min(containerWidth, containerHeight) * 0.25); // Much larger spacing
-    const minNodeSpacing = Math.max(200, containerWidth * 0.15); // Minimum 200px or 15% of container width
-    const maxAttempts = 20;
-
-    // Enhanced circular layout with collision avoidance
-    levelGroups.forEach((levelContacts, level) => {
-      const radius = baseRadius + (level - 1) * levelIncrement;
-      const contactCount = levelContacts.length;
+    
+    // Process each level from top to bottom
+    const sortedLevels = Array.from(levelGroups.keys()).sort((a, b) => a - b);
+    
+    sortedLevels.forEach(level => {
+      const levelContacts = levelGroups.get(level)!;
+      const y = ROOT_Y + (level * RANK_SEPARATION);
       
-      if (contactCount === 1) {
-        // Single node: place directly on circle
-        const angle = Math.PI / 4; // 45 degrees for visual balance
-        let x = centerX + radius * Math.cos(angle);
-        let y = centerY + radius * Math.sin(angle);
-        
-        // Ensure within bounds
-        const padding = 120;
-        x = Math.max(padding, Math.min(containerWidth - padding, x));
-        y = Math.max(padding, Math.min(containerHeight - padding, y));
-        
-        positions.set(levelContacts[0].id, { x, y });
-        return;
-      }
-
-      // Multiple nodes: distribute evenly around circle with extra spacing
-      const angleStep = (2 * Math.PI) / contactCount;
-      const spacingMultiplier = Math.max(1.5, 3 - contactCount * 0.1); // Increase spacing for fewer nodes
+      // Group contacts by their parent for proper positioning
+      const parentGroups = new Map<string, Contact[]>();
       
-      levelContacts.forEach((contact, index) => {
-        let attempts = 0;
-        let positioned = false;
+      levelContacts.forEach(contact => {
+        const parentId = contact.parent_contact_id || "rook-tech";
+        if (!parentGroups.has(parentId)) {
+          parentGroups.set(parentId, []);
+        }
+        parentGroups.get(parentId)!.push(contact);
+      });
+      
+      // Position each parent group
+      const parentIds = Array.from(parentGroups.keys());
+      
+      if (parentIds.length === 1) {
+        // Single parent group - center under parent
+        const parentId = parentIds[0];
+        const children = parentGroups.get(parentId)!;
+        const parentPos = positions.get(parentId);
         
-        while (!positioned && attempts < maxAttempts) {
-          // Calculate base position with spacing multiplier
-          const baseAngle = index * angleStep * spacingMultiplier;
-          const spreadRadius = radius + (attempts * 30); // Increase radius if collisions
+        if (parentPos) {
+          positionChildrenUnderParent(children, parentPos, positions, NODE_SEPARATION);
+        }
+      } else {
+        // Multiple parent groups - distribute across width
+        const totalWidth = parentIds.length * 300; // Base width per parent group
+        const startX = centerX - (totalWidth / 2);
+        
+        parentIds.forEach((parentId, groupIndex) => {
+          const children = parentGroups.get(parentId)!;
+          const groupCenterX = startX + (groupIndex * 300) + 150;
           
-          let x = centerX + spreadRadius * Math.cos(baseAngle);
-          let y = centerY + spreadRadius * Math.sin(baseAngle);
-          
-          // Ensure nodes stay within bounds with generous padding
-          const padding = 140;
-          x = Math.max(padding, Math.min(containerWidth - padding, x));
-          y = Math.max(padding, Math.min(containerHeight - padding, y));
-          
-          // Advanced collision detection with larger spacing
-          let hasCollision = false;
-          for (const [existingId, existingPos] of positions) {
-            const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
-            if (distance < minNodeSpacing) {
-              hasCollision = true;
-              break;
-            }
+          // Position parent if not already positioned
+          if (!positions.has(parentId) && parentId !== "rook-tech") {
+            const parentLevel = contactLevels.get(parentId) || 0;
+            const parentY = ROOT_Y + (parentLevel * RANK_SEPARATION);
+            positions.set(parentId, { x: groupCenterX, y: parentY });
           }
           
-          if (!hasCollision) {
-            positions.set(contact.id, { x, y });
-            positioned = true;
-          } else {
-            // Try alternative positions with increased radius and angle offset
-            const offsetAngle = baseAngle + (attempts * 0.5);
-            x = centerX + (spreadRadius + attempts * 40) * Math.cos(offsetAngle);
-            y = centerY + (spreadRadius + attempts * 40) * Math.sin(offsetAngle);
-            
-            x = Math.max(padding, Math.min(containerWidth - padding, x));
-            y = Math.max(padding, Math.min(containerHeight - padding, y));
-            
-            // Check collision again
-            hasCollision = false;
+          const parentPos = positions.get(parentId) || { x: groupCenterX, y: y - RANK_SEPARATION };
+          positionChildrenUnderParent(children, parentPos, positions, NODE_SEPARATION);
+        });
+      }
+    });
+    
+    // Helper function to position children under their parent
+    function positionChildrenUnderParent(
+      children: Contact[], 
+      parentPos: { x: number; y: number }, 
+      positions: Map<string, { x: number; y: number }>,
+      separation: number
+    ) {
+      const childCount = children.length;
+      
+      if (childCount === 1) {
+        // Single child - center under parent
+        positions.set(children[0].id, { 
+          x: parentPos.x, 
+          y: parentPos.y + RANK_SEPARATION 
+        });
+      } else {
+        // Multiple children - distribute horizontally under parent
+        const totalWidth = (childCount - 1) * separation;
+        const startX = parentPos.x - (totalWidth / 2);
+        
+        children.forEach((child, index) => {
+          const x = startX + (index * separation);
+          const y = parentPos.y + RANK_SEPARATION;
+          
+          // Ensure minimum spacing from other nodes
+          let finalX = x;
+          let attempt = 0;
+          while (attempt < 10) {
+            let hasCollision = false;
             for (const [existingId, existingPos] of positions) {
-              const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
-              if (distance < minNodeSpacing) {
-                hasCollision = true;
-                break;
+              if (existingId !== child.id) {
+                const distance = Math.sqrt(
+                  Math.pow(finalX - existingPos.x, 2) + 
+                  Math.pow(y - existingPos.y, 2)
+                );
+                if (distance < NODE_SEPARATION) {
+                  hasCollision = true;
+                  finalX += NODE_SEPARATION * 0.5; // Adjust position
+                  break;
+                }
               }
             }
-            
-            if (!hasCollision) {
-              positions.set(contact.id, { x, y });
-              positioned = true;
-            }
+            if (!hasCollision) break;
+            attempt++;
           }
           
-          attempts++;
-        }
-        
-        // Fallback: force position if all attempts failed
-        if (!positioned) {
-          const fallbackAngle = index * angleStep + (Math.PI / 4);
-          const fallbackRadius = radius + (attempts * 50);
-          let x = centerX + fallbackRadius * Math.cos(fallbackAngle);
-          let y = centerY + fallbackRadius * Math.sin(fallbackAngle);
-          
-          const padding = 140;
-          x = Math.max(padding, Math.min(containerWidth - padding, x));
-          y = Math.max(padding, Math.min(containerHeight - padding, y));
-          
-          positions.set(contact.id, { x, y });
-        }
-      });
-    });
-
+          positions.set(child.id, { x: finalX, y });
+        });
+      }
+    }
+    
     return positions;
   };
 
   const positions = useMemo(() => {
-    // Dynamic container sizing for optimal spacing
-    const containerWidth = Math.max(1000, window.innerWidth < 768 ? 800 : 1200);
-    const containerHeight = Math.max(800, window.innerWidth < 768 ? 600 : 900);
+    // Use larger container for hierarchical tree layout
+    const containerWidth = Math.max(1400, window.innerWidth < 768 ? 1000 : 1600);
+    const containerHeight = Math.max(1000, window.innerWidth < 768 ? 800 : 1200);
     return calculatePositions(contacts, containerWidth, containerHeight);
   }, [contacts, networkStructure]);
 
@@ -236,26 +251,26 @@ export const NetworkFlow = () => {
         data: { 
           label: (
             <div className="flex flex-col items-center text-center p-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-2 shadow-lg">
-                <Crown className="h-6 w-6 text-primary-foreground" />
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/90 flex items-center justify-center mb-3 shadow-lg border-2 border-primary/20">
+                <Crown className="h-8 w-8 text-primary-foreground" />
               </div>
-              <div className="font-bold text-sm text-card-foreground">Rook Tech</div>
-              <div className="text-xs text-muted-foreground">Ana Merkez</div>
+              <div className="font-bold text-base text-card-foreground">Rook Tech</div>
+              <div className="text-sm text-muted-foreground">Ana Merkez</div>
             </div>
           ),
           contact: null,
           isRoot: true
         },
-        position: { x: positions.get("rook-tech")?.x || 600, y: positions.get("rook-tech")?.y || 450 },
+        position: positions.get("rook-tech") || { x: 700, y: 80 },
         style: { 
           background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.98))", 
           color: "hsl(var(--card-foreground))", 
           borderRadius: "24px", 
           padding: "0",
           border: "3px solid hsl(var(--primary) / 0.4)",
-          boxShadow: "0 12px 40px hsl(var(--primary) / 0.2), 0 6px 20px hsl(var(--shadow) / 0.15)",
-          minWidth: "140px",
-          minHeight: "140px",
+          boxShadow: "0 12px 40px hsl(var(--primary) / 0.25), 0 6px 20px hsl(var(--shadow) / 0.2)",
+          minWidth: "160px",
+          minHeight: "160px",
           backdropFilter: "blur(12px)"
         },
       });
@@ -278,8 +293,8 @@ export const NetworkFlow = () => {
          borderRadius: "20px",
          border: `2px solid ${relationshipColor}`,
          boxShadow: `0 8px 28px ${relationshipColor}25, 0 4px 12px hsl(var(--shadow) / 0.12)`,
-         minWidth: "120px",
-         minHeight: "120px",
+         minWidth: "140px",
+         minHeight: "140px",
          cursor: "pointer",
          backdropFilter: "blur(10px)"
        };
@@ -292,19 +307,24 @@ export const NetworkFlow = () => {
              <Tooltip>
                <TooltipTrigger asChild>
                  <div className="flex flex-col items-center text-center p-4">
-                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center mb-3 shadow-sm border border-border/20">
+                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-muted to-muted/90 flex items-center justify-center mb-3 shadow-sm border-2 border-border/30">
                      {hasChildren ? (
-                       <Users className="h-5 w-5 text-primary" />
+                       <Users className="h-6 w-6 text-primary" />
                      ) : (
-                       <UserCheck className="h-5 w-5 text-muted-foreground" />
+                       <UserCheck className="h-6 w-6 text-muted-foreground" />
                      )}
                    </div>
-                   <div className="font-semibold text-sm text-card-foreground mb-1 leading-tight text-center max-w-[100px]">
+                   <div className="font-semibold text-sm text-card-foreground mb-1 leading-tight text-center max-w-[120px]">
                      {contact.first_name} {contact.last_name}
                    </div>
                    {contact.profession && (
-                     <div className="text-xs text-muted-foreground text-center max-w-[100px] truncate">
+                     <div className="text-xs text-muted-foreground text-center max-w-[120px] truncate">
                        {contact.profession}
+                     </div>
+                   )}
+                   {contact.city && (
+                     <div className="text-xs text-muted-foreground/80 text-center max-w-[120px] truncate mt-1">
+                       {contact.city}
                      </div>
                    )}
                  </div>
@@ -367,10 +387,10 @@ export const NetworkFlow = () => {
             style: { 
               stroke: relationshipColor,
               strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
-              opacity: 0.6,
+              opacity: 0.7,
               strokeDasharray: contact.relationship_degree >= 8 ? "0" : "8,4"
             },
-            type: "smoothstep"
+            type: "step"
           });
         } else {
           // Parent not found, connect to Rook Tech
@@ -382,10 +402,10 @@ export const NetworkFlow = () => {
             style: { 
               stroke: relationshipColor,
               strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
-              opacity: 0.6,
+              opacity: 0.7,
               strokeDasharray: contact.relationship_degree >= 8 ? "0" : "8,4"
             },
-            type: "smoothstep"
+            type: "step"
           });
         }
       } else {
@@ -398,10 +418,10 @@ export const NetworkFlow = () => {
           style: { 
             stroke: relationshipColor,
             strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
-            opacity: 0.6,
+            opacity: 0.7,
             strokeDasharray: contact.relationship_degree >= 8 ? "0" : "8,4"
           },
-          type: "smoothstep"
+          type: "step"
         });
       }
     });
@@ -434,16 +454,16 @@ export const NetworkFlow = () => {
         <StatsBar />
       </Card>
       
-      <div className="w-full h-[500px] md:h-[700px] lg:h-[900px] relative bg-gradient-to-br from-background via-background to-muted/20 rounded-xl overflow-hidden border border-border/50">
+      <div className="w-full h-[600px] md:h-[800px] lg:h-[1000px] relative bg-gradient-to-br from-background via-background to-muted/20 rounded-xl overflow-hidden border border-border/50">
       {/* Modern Network Legend */}
        <div className="absolute top-6 left-6 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg">
-         <div className="font-semibold mb-3 text-card-foreground">Ağ Haritası</div>
+         <div className="font-semibold mb-3 text-card-foreground">Hierarchical Tree</div>
          <div className="space-y-2">
            <div className="flex items-center gap-2">
              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
                <Crown className="h-2 w-2 text-primary-foreground" />
              </div>
-             <span className="text-muted-foreground">Ana Merkez</span>
+             <span className="text-muted-foreground">Root Node</span>
            </div>
            <div className="flex items-center gap-2">
              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
@@ -474,13 +494,13 @@ export const NetworkFlow = () => {
           onNodeClick={handleNodeClick}
           fitView
           className="w-full h-full"
-          fitViewOptions={{ padding: 0.2, includeHiddenNodes: false, minZoom: 0.1, maxZoom: 1.5 }}
+          fitViewOptions={{ padding: 0.1, includeHiddenNodes: false, minZoom: 0.1, maxZoom: 1.2 }}
           nodesDraggable={true}
           nodesConnectable={false}
           elementsSelectable={true}
           minZoom={0.1}
-          maxZoom={1.5}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.4 }}
+          maxZoom={1.2}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
           preventScrolling={false}
           panOnDrag={true}
           zoomOnDoubleClick={false}
