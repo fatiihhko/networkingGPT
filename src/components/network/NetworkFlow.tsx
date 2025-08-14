@@ -90,15 +90,15 @@ export const NetworkFlow = () => {
     return { contactMap, rootContacts };
   }, [contacts]);
 
-  // Calculate positions for hierarchical layout with Rook Tech as center
-  const calculatePositions = (contacts: Contact[], startX: number, startY: number, levelHeight: number = 120) => {
+  // Advanced layout algorithm for modern network visualization
+  const calculatePositions = (contacts: Contact[], containerWidth: number = 800, containerHeight: number = 560) => {
     const positions = new Map<string, { x: number; y: number }>();
     
-    // Rook Tech is always at center
-    const centerX = 400;
-    const centerY = 200;
+    // Responsive center calculations
+    const centerX = containerWidth / 2;
+    const centerY = containerHeight / 2;
     
-    // Group contacts by level
+    // Group contacts by hierarchy level
     const levelGroups = new Map<number, Contact[]>();
     contacts.forEach(contact => {
       const level = contact.parent_contact_id ? 
@@ -109,14 +109,45 @@ export const NetworkFlow = () => {
       levelGroups.get(level)!.push(contact);
     });
 
-    // Position contacts by level
-    levelGroups.forEach((levelContacts, level) => {
-      const y = centerY + (level * levelHeight);
-      const totalWidth = levelContacts.length * 200;
-      const startX = centerX - (totalWidth / 2) + 100;
+    // Dynamic spacing based on screen size and node count
+    const baseRadius = Math.min(containerWidth, containerHeight) * 0.3;
+    const levelIncrement = Math.min(containerWidth, containerHeight) * 0.15;
+    const minNodeSpacing = 120; // Minimum distance between nodes
 
+    // Position nodes in concentric circles with even distribution
+    levelGroups.forEach((levelContacts, level) => {
+      const radius = baseRadius + (level - 1) * levelIncrement;
+      const angleStep = (2 * Math.PI) / Math.max(levelContacts.length, 1);
+      
       levelContacts.forEach((contact, index) => {
-        const x = startX + (index * 200);
+        const angle = index * angleStep;
+        let x = centerX + radius * Math.cos(angle);
+        let y = centerY + radius * Math.sin(angle);
+        
+        // Ensure nodes stay within bounds with padding
+        const padding = 80;
+        x = Math.max(padding, Math.min(containerWidth - padding, x));
+        y = Math.max(padding, Math.min(containerHeight - padding, y));
+        
+        // Anti-collision system: check for overlaps and adjust
+        let overlapping = true;
+        let attempts = 0;
+        while (overlapping && attempts < 10) {
+          overlapping = false;
+          for (const [existingId, existingPos] of positions) {
+            const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
+            if (distance < minNodeSpacing) {
+              // Adjust position to avoid overlap
+              const adjustAngle = angle + (attempts * 0.3);
+              x = centerX + (radius + attempts * 20) * Math.cos(adjustAngle);
+              y = centerY + (radius + attempts * 20) * Math.sin(adjustAngle);
+              overlapping = true;
+              break;
+            }
+          }
+          attempts++;
+        }
+        
         positions.set(contact.id, { x, y });
       });
     });
@@ -125,39 +156,45 @@ export const NetworkFlow = () => {
   };
 
   const positions = useMemo(() => {
-    return calculatePositions(contacts, 50, 50);
+    // Use responsive dimensions for better mobile experience
+    const containerWidth = window.innerWidth < 768 ? 500 : 800;
+    const containerHeight = window.innerWidth < 768 ? 400 : 560;
+    return calculatePositions(contacts, containerWidth, containerHeight);
   }, [contacts, networkStructure]);
 
   const nodes = useMemo(() => {
     const nodeElements: Node[] = [];
 
     // Always add Rook Tech as the center root node
-    nodeElements.push({
-      id: "rook-tech",
-      type: "default",
-      data: { 
-        label: (
-          <div className="flex flex-col items-center text-center p-2">
-            <Crown className="h-6 w-6 text-primary mb-1" />
-            <div className="font-bold text-lg text-primary-foreground">Rook Tech</div>
-            <div className="text-xs text-primary-foreground/80">Ana Merkez</div>
-          </div>
-        ),
-        contact: null,
-        isRoot: true
-      },
-      position: { x: 400, y: 200 },
-      style: { 
-        background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8))", 
-        color: "hsl(var(--primary-foreground))", 
-        borderRadius: "16px", 
-        padding: "16px",
-        border: "3px solid hsl(var(--primary) / 0.3)",
-        boxShadow: "0 0 20px hsl(var(--primary) / 0.3)",
-        minWidth: "140px",
-        minHeight: "100px"
-      },
-    });
+      nodeElements.push({
+        id: "rook-tech",
+        type: "default",
+        data: { 
+          label: (
+            <div className="flex flex-col items-center text-center p-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-2 shadow-lg">
+                <Crown className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div className="font-bold text-sm text-card-foreground">Rook Tech</div>
+              <div className="text-xs text-muted-foreground">Ana Merkez</div>
+            </div>
+          ),
+          contact: null,
+          isRoot: true
+        },
+        position: { x: 400, y: 280 },
+        style: { 
+          background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.95))", 
+          color: "hsl(var(--card-foreground))", 
+          borderRadius: "20px", 
+          padding: "0",
+          border: "2px solid hsl(var(--primary) / 0.3)",
+          boxShadow: "0 8px 32px hsl(var(--primary) / 0.15), 0 4px 16px hsl(var(--shadow) / 0.1)",
+          minWidth: "120px",
+          minHeight: "120px",
+          backdropFilter: "blur(10px)"
+        },
+      });
 
     // Add contact nodes
     contacts.forEach((contact) => {
@@ -170,37 +207,43 @@ export const NetworkFlow = () => {
                                contact.relationship_degree >= 5 ? "hsl(var(--closeness-yellow))" : 
                                "hsl(var(--closeness-red))";
 
-             const nodeStyle = {
-         padding: "8px",
+       const nodeStyle = {
+         padding: "0",
          color: 'hsl(var(--card-foreground))',
-         background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.8))",
-         borderRadius: "12px",
+         background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.95))",
+         borderRadius: "16px",
          border: `2px solid ${relationshipColor}`,
-         boxShadow: `0 4px 12px ${relationshipColor}30`,
+         boxShadow: `0 6px 20px ${relationshipColor}20, 0 2px 8px hsl(var(--shadow) / 0.1)`,
          minWidth: "100px",
-         minHeight: "60px",
+         minHeight: "100px",
          cursor: "pointer",
-         transition: "all 0.3s ease"
+         backdropFilter: "blur(8px)"
        };
 
       nodeElements.push({
         id: contact.id,
         type: "default",
-                 data: {
+                  data: {
            label: (
              <Tooltip>
                <TooltipTrigger asChild>
-                                   <div className="flex flex-col items-center text-center">
-                    {hasChildren && <Users className="h-3 w-3 text-primary mb-1" />}
-                    <div className="font-semibold text-xs text-card-foreground mb-1">
-                      {contact.first_name} {contact.last_name}
-                    </div>
-                    {contact.profession && (
-                      <div className="text-xs text-muted-foreground">
-                        {contact.profession}
-                      </div>
-                    )}
-                  </div>
+                 <div className="flex flex-col items-center text-center p-3">
+                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center mb-2 shadow-sm">
+                     {hasChildren ? (
+                       <Users className="h-4 w-4 text-primary" />
+                     ) : (
+                       <UserCheck className="h-4 w-4 text-muted-foreground" />
+                     )}
+                   </div>
+                   <div className="font-semibold text-xs text-card-foreground mb-1 leading-tight">
+                     {contact.first_name} {contact.last_name}
+                   </div>
+                   {contact.profession && (
+                     <div className="text-xs text-muted-foreground truncate max-w-[80px]">
+                       {contact.profession}
+                     </div>
+                   )}
+                 </div>
                </TooltipTrigger>
                                <TooltipContent className="glass-dark max-w-xs">
                   <div className="space-y-2">
@@ -259,10 +302,11 @@ export const NetworkFlow = () => {
             animated: contact.relationship_degree >= 8,
             style: { 
               stroke: relationshipColor,
-              strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
-              opacity: 0.8
+              strokeWidth: contact.relationship_degree >= 8 ? 2.5 : 1.5,
+              opacity: 0.7,
+              strokeDasharray: contact.relationship_degree >= 8 ? "0" : "5,5"
             },
-            type: "smoothstep"
+            type: "bezier"
           });
         } else {
           // Parent not found, connect to Rook Tech
@@ -273,10 +317,11 @@ export const NetworkFlow = () => {
             animated: contact.relationship_degree >= 8,
             style: { 
               stroke: relationshipColor,
-              strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
-              opacity: 0.8
+              strokeWidth: contact.relationship_degree >= 8 ? 2.5 : 1.5,
+              opacity: 0.7,
+              strokeDasharray: contact.relationship_degree >= 8 ? "0" : "5,5"
             },
-            type: "smoothstep"
+            type: "bezier"
           });
         }
       } else {
@@ -288,10 +333,11 @@ export const NetworkFlow = () => {
           animated: contact.relationship_degree >= 8,
           style: { 
             stroke: relationshipColor,
-            strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
-            opacity: 0.8
+            strokeWidth: contact.relationship_degree >= 8 ? 2.5 : 1.5,
+            opacity: 0.7,
+            strokeDasharray: contact.relationship_degree >= 8 ? "0" : "5,5"
           },
-          type: "smoothstep"
+          type: "bezier"
         });
       }
     });
@@ -324,30 +370,35 @@ export const NetworkFlow = () => {
         <StatsBar />
       </Card>
       
-      <div className="w-full h-[420px] md:h-[560px] relative">
-      {/* Network Legend */}
-       <div className="absolute top-4 left-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 text-xs">
-         <div className="font-semibold mb-2">Ağ Haritası Açıklaması</div>
-         <div className="space-y-1">
-                       <div className="flex items-center gap-2">
-              <Crown className="h-3 w-3 text-primary" />
-              <span>Rook Tech (Ana Merkez)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-3 w-3 text-primary" />
-              <span>Davet eden kullanıcı</span>
-            </div>
+      <div className="w-full h-[420px] md:h-[560px] lg:h-[700px] relative bg-gradient-to-br from-background via-background to-muted/20 rounded-xl overflow-hidden border border-border/50">
+      {/* Modern Network Legend */}
+       <div className="absolute top-4 left-4 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg">
+         <div className="font-semibold mb-3 text-card-foreground">Ağ Haritası</div>
+         <div className="space-y-2">
            <div className="flex items-center gap-2">
-             <div className="w-3 h-0.5 bg-green-500"></div>
-             <span>Güçlü bağlantı (8-10/10)</span>
+             <div className="w-4 h-4 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+               <Crown className="h-2 w-2 text-primary-foreground" />
+             </div>
+             <span className="text-muted-foreground">Ana Merkez</span>
            </div>
            <div className="flex items-center gap-2">
-             <div className="w-3 h-0.5 bg-yellow-500"></div>
-             <span>Orta bağlantı (5-7/10)</span>
+             <div className="w-4 h-4 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center">
+               <Users className="h-2 w-2 text-primary" />
+             </div>
+             <span className="text-muted-foreground">Davet Eden</span>
+           </div>
+           <div className="h-px bg-border my-2"></div>
+           <div className="flex items-center gap-2">
+             <div className="w-4 h-px bg-gradient-to-r from-green-500 to-green-400"></div>
+             <span className="text-muted-foreground">Güçlü (8-10)</span>
            </div>
            <div className="flex items-center gap-2">
-             <div className="w-3 h-0.5 bg-red-500"></div>
-             <span>Zayıf bağlantı (1-4/10)</span>
+             <div className="w-4 h-px bg-gradient-to-r from-yellow-500 to-yellow-400 opacity-70" style={{strokeDasharray: "2,2"}}></div>
+             <span className="text-muted-foreground">Orta (5-7)</span>
+           </div>
+           <div className="flex items-center gap-2">
+             <div className="w-4 h-px bg-gradient-to-r from-red-500 to-red-400 opacity-70" style={{strokeDasharray: "2,2"}}></div>
+             <span className="text-muted-foreground">Zayıf (1-4)</span>
            </div>
          </div>
        </div>
@@ -358,42 +409,65 @@ export const NetworkFlow = () => {
           edges={edges} 
           onNodeClick={handleNodeClick}
           fitView
-          className="modern-card"
-          fitViewOptions={{ padding: 0.2 }}
+          className="w-full h-full"
+          fitViewOptions={{ padding: 0.15, includeHiddenNodes: false }}
+          nodesDraggable={true}
+          nodesConnectable={false}
+          elementsSelectable={true}
+          minZoom={0.3}
+          maxZoom={2}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         >
           <MiniMap 
             style={{ 
               background: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
-              borderRadius: '8px'
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px hsl(var(--shadow) / 0.1)'
             }}
             nodeColor="hsl(var(--primary))"
+            maskColor="hsl(var(--muted) / 0.8)"
+            className="!w-32 !h-24"
           />
           <Controls 
             style={{ 
               background: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
-              borderRadius: '8px'
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px hsl(var(--shadow) / 0.1)'
             }}
+            showInteractive={false}
           />
           <Background 
-            color="hsl(var(--muted-foreground) / 0.2)"
-            gap={20}
-            size={1}
+            color="hsl(var(--muted-foreground) / 0.1)"
+            gap={24}
+            size={0.8}
           />
-                </ReactFlow>
+        </ReactFlow>
       </TooltipProvider>
 
-             {/* Network Statistics */}
-       <div className="absolute bottom-4 left-4 z-10 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 text-xs">
-         <div className="font-semibold mb-2">Ağ İstatistikleri</div>
-         <div className="space-y-1">
-                       <div>Toplam Kişi: {contacts.length}</div>
-            <div>Davet ile Eklenen: {contacts.filter(c => c.parent_contact_id).length}</div>
-            <div>Bağlantı Sayısı: {edges.length}</div>
-            <div>Maksimum Seviye: {contacts.length > 0 ? 
-              Math.max(...contacts.map(c => networkStructure.contactMap.get(c.id)?.level || 0)) : '0'}
-            </div>
+             {/* Modern Network Statistics */}
+       <div className="absolute bottom-4 left-4 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg">
+         <div className="font-semibold mb-3 text-card-foreground">İstatistikler</div>
+         <div className="space-y-2">
+           <div className="flex justify-between items-center">
+             <span className="text-muted-foreground">Toplam:</span>
+             <span className="font-medium text-card-foreground">{contacts.length}</span>
+           </div>
+           <div className="flex justify-between items-center">
+             <span className="text-muted-foreground">Davetli:</span>
+             <span className="font-medium text-card-foreground">{contacts.filter(c => c.parent_contact_id).length}</span>
+           </div>
+           <div className="flex justify-between items-center">
+             <span className="text-muted-foreground">Bağlantı:</span>
+             <span className="font-medium text-card-foreground">{edges.length}</span>
+           </div>
+           <div className="flex justify-between items-center">
+             <span className="text-muted-foreground">Seviye:</span>
+             <span className="font-medium text-card-foreground">{contacts.length > 0 ? 
+               Math.max(...contacts.map(c => networkStructure.contactMap.get(c.id)?.level || 0)) : '0'}
+             </span>
+           </div>
          </div>
        </div>
 
