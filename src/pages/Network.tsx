@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import { ContactsProvider } from "@/components/network/ContactsContext";
 import { AIAssistant } from "@/components/network/AIAssistant";
 import { UserPlus, List as ListIcon, Share2, Bot, LogOut, Sparkles, Map } from "lucide-react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { ContactFormSkeleton, ContactListSkeleton, NetworkFlowSkeleton } from "@/components/ui/loading-skeleton";
 
 
 
@@ -25,14 +24,12 @@ const InviteButtonInline = () => {
   const [maxUses, setMaxUses] = useState<number>(0);
   const [link, setLink] = useState<string>("");
 
-
   const createInvite = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({ title: "Giriş gerekli", description: "Önce giriş yapmalısınız.", variant: "destructive" });
       return;
     }
-
 
     const { data, error } = await supabase.functions.invoke("invite-create", {
       body: {
@@ -66,20 +63,84 @@ const InviteButtonInline = () => {
           <DialogTitle className="gradient-text">Davetiye Bağlantısı Oluştur</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Button onClick={createInvite} className="btn-modern hover-lift">
+          <div className="flex flex-col gap-2">
+            <Button onClick={createInvite} className="btn-modern hover-lift w-full">
               <Sparkles className="h-4 w-4 mr-2" />
               Bağlantı Oluştur
             </Button>
             {link && (
-              <>
-                <Input readOnly value={link} className="flex-1 hover-scale" />
+              <div className="flex gap-2">
+                <Input readOnly value={link} className="flex-1 hover-scale text-xs" />
                 <Button variant="secondary" onClick={() => navigator.clipboard.writeText(link)} className="hover-lift">
                   Kopyala
                 </Button>
-              </>
+              </div>
             )}
           </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const InviteButtonMobile = () => {
+  const [open, setOpen] = useState(false);
+  const [link, setLink] = useState<string>("");
+
+  const createInvite = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ title: "Giriş gerekli", description: "Önce giriş yapmalısınız.", variant: "destructive" });
+      return;
+    }
+
+    const { data, error } = await supabase.functions.invoke("invite-create", {
+      body: {
+        max_uses: 0,
+      },
+    });
+
+    if (error) {
+      toast({ title: "Davet oluşturulamadı", description: error.message || "Bilinmeyen hata", variant: "destructive" });
+      return;
+    }
+
+    const token = (data as any)?.token as string;
+    const url = `${window.location.origin}/invite/${token}`;
+    setLink(url);
+    await navigator.clipboard.writeText(url).catch(() => {});
+    toast({ title: "Davet oluşturuldu", description: "Bağlantı panoya kopyalandı." });
+    window.dispatchEvent(new CustomEvent("invites:refresh"));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="hover-lift hover-glow w-10 h-10 p-0">
+          <Sparkles className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="glass-dark max-w-sm mx-auto">
+        <DialogHeader>
+          <DialogTitle className="gradient-text text-center">Davet Bağlantısı</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Button onClick={createInvite} className="btn-modern hover-lift w-full">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Bağlantı Oluştur
+          </Button>
+          {link && (
+            <div className="space-y-2">
+              <Input readOnly value={link} className="hover-scale text-xs" />
+              <Button 
+                variant="secondary" 
+                onClick={() => navigator.clipboard.writeText(link)} 
+                className="hover-lift w-full"
+              >
+                Panoya Kopyala
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -116,24 +177,7 @@ const Network = () => {
             <InviteButtonInline />
           </div>
           <div className="md:hidden">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="hover-lift hover-glow w-10 h-10 p-0">
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="glass-dark">
-                <DialogHeader>
-                  <DialogTitle className="gradient-text">Davet Bağlantısı Oluştur</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Button className="btn-modern hover-lift w-full">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Bağlantı Oluştur
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <InviteButtonMobile />
           </div>
           <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift hover-glow w-10 h-10 p-0">
             <LogOut className="h-4 w-4" />
@@ -221,30 +265,22 @@ const Network = () => {
             <ErrorBoundary>
               {activeTab === "add" && (
                 <div className="fade-in">
-                  <Suspense fallback={<ContactFormSkeleton />}>
-                    <ContactForm />
-                  </Suspense>
+                  <ContactForm />
                 </div>
               )}
               {activeTab === "list" && (
                 <div className="fade-in">
-                  <Suspense fallback={<ContactListSkeleton />}>
-                    <ContactList />
-                  </Suspense>
+                  <ContactList />
                 </div>
               )}
               {activeTab === "map" && (
                 <div className="fade-in">
-                  <Suspense fallback={<NetworkFlowSkeleton />}>
-                    <NetworkFlow />
-                  </Suspense>
+                  <NetworkFlow />
                 </div>
               )}
               {activeTab === "ai" && (
                 <div className="fade-in">
-                  <Suspense fallback={<div className="loading-spinner mx-auto" />}>
-                    <AIAssistant />
-                  </Suspense>
+                  <AIAssistant />
                 </div>
               )}
             </ErrorBoundary>
@@ -257,24 +293,16 @@ const Network = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <ErrorBoundary>
                 <TabsContent value="add" className="fade-in">
-                  <Suspense fallback={<ContactFormSkeleton />}>
-                    <ContactForm />
-                  </Suspense>
+                  <ContactForm />
                 </TabsContent>
                 <TabsContent value="list" className="fade-in">
-                  <Suspense fallback={<ContactListSkeleton />}>
-                    <ContactList />
-                  </Suspense>
+                  <ContactList />
                 </TabsContent>
                 <TabsContent value="map" className="fade-in">
-                  <Suspense fallback={<NetworkFlowSkeleton />}>
-                    <NetworkFlow />
-                  </Suspense>
+                  <NetworkFlow />
                 </TabsContent>
                 <TabsContent value="ai" className="fade-in">
-                  <Suspense fallback={<div className="loading-spinner mx-auto" />}>
-                    <AIAssistant />
-                  </Suspense>
+                  <AIAssistant />
                 </TabsContent>
               </ErrorBoundary>
             </Tabs>
