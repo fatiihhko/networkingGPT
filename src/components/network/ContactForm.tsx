@@ -543,7 +543,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
             ) : (
               <>
                 <UserPlus className="h-5 w-5 mr-2" />
-                {isSelfAdd ? "Kendimi Kaydet" : "Kişiyi Kaydet"}
+                {isSelfAdd ? "Devam" : "Kişiyi Kaydet"}
               </>
             )}
           </Button>

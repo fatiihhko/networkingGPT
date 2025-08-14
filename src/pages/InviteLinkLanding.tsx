@@ -137,17 +137,44 @@ export const InviteLinkLanding = () => {
 
     setSubmitting(true);
     try {
-      // Add others with the self contact as parent
-      const { data, error } = await supabase.functions.invoke("invite-submit", {
-        body: {
-          token,
-          contact: {
-            ...contactData,
-            parent_contact_id: selfContact.id, // Always use the self contact as parent
-          },
-          sendEmail,
-        },
-      });
+      // Get the invite owner's user_id
+      const { data: inviteData, error: inviteError } = await supabase
+        .from("invites")
+        .select("owner_user_id")
+        .eq("token", token)
+        .single();
+
+      if (inviteError || !inviteData) {
+        toast({ title: "Hata", description: "Davet bilgileri bulunamadı", variant: "destructive" });
+        return;
+      }
+
+      // Insert contact with selfContact as parent
+      const { data: inserted, error: insertError } = await supabase
+        .from("contacts")
+        .insert({
+          user_id: inviteData.owner_user_id,
+          first_name: contactData.first_name,
+          last_name: contactData.last_name,
+          city: contactData.city,
+          profession: contactData.profession,
+          relationship_degree: contactData.relationship_degree,
+          services: contactData.services,
+          tags: contactData.tags,
+          phone: contactData.phone,
+          email: contactData.email || null,
+          description: contactData.description,
+          parent_contact_id: selfContact.id, // This person will be connected to the self contact
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        toast({ title: "Kaydedilemedi", description: insertError.message, variant: "destructive" });
+        return;
+      }
+
+      const data = { contact: inserted };
 
       if (error) {
         if (error.message?.includes("limitine ulaştı")) {
@@ -308,14 +335,8 @@ export const InviteLinkLanding = () => {
                   </div>
                 )}
 
-                {step === 'add-others' && (
+                                {step === 'add-others' && (
                   <div className="space-y-4">
-                    <div className="text-center">
-                      <h3 className="text-lg font-semibold mb-2">Tanıdıklarınızı Ekleyin</h3>
-                                        <p className="text-muted-foreground">
-                    Ağınıza eklemek istediğiniz kişilerin bilgilerini girin.
-                  </p>
-                    </div>
                     <ContactForm 
                       inviteToken={token}
                       onSuccess={(contact, values, sendEmail) => handleAddOthers(values, sendEmail)}
