@@ -1,260 +1,268 @@
-import { useMemo, useState } from "react";
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Building2, MapPin, Tag, Bot, Search, Sparkles, Brain, Zap } from "lucide-react";
+import { Bot, Users, Target, MessageCircle, Sparkles, Send } from "lucide-react";
 import { useContacts } from "./ContactsContext";
 import type { Contact } from "./types";
 
 export const AIAssistant = () => {
   const { contacts } = useContacts();
-  const [q, setQ] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [userMessage, setUserMessage] = useState("");
+  const [chatState, setChatState] = useState<"waiting" | "asking" | "thinking" | "results">("waiting");
+  const [teamRequirements, setTeamRequirements] = useState<{
+    description: string;
+    teamSize: number;
+    skills: string[];
+  } | null>(null);
+  const [suggestedTeam, setSuggestedTeam] = useState<Contact[]>([]);
 
-  const categories = [
-    { id: "all", label: "Tümü", icon: Bot },
-    { id: "profession", label: "Meslek", icon: Building2 },
-    { id: "location", label: "Konum", icon: MapPin },
-    { id: "services", label: "Hizmetler", icon: Tag },
-  ];
-
-  const filtered = useMemo(() => {
-    const query = q.trim().toLowerCase();
-    if (!query) return contacts;
-    
-    return contacts.filter((c: Contact) => {
-      const haystack = [
-        c.first_name || "",
-        c.last_name || "",
-        c.city || "",
-        c.profession || "",
-        ...(Array.isArray(c.services) ? c.services : []),
-        ...(Array.isArray(c.tags) ? c.tags : []),
-      ]
-        .join("\n")
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [q, contacts]);
-
-  const getAIInsights = () => {
-    if (contacts.length === 0) return null;
-    
-    const totalContacts = contacts.length;
-    const cities = new Set(contacts.map(c => c.city).filter(Boolean));
-    const professions = new Set(contacts.map(c => c.profession).filter(Boolean));
-    const avgRelationship = contacts.reduce((sum, c) => sum + (c.relationship_degree || 0), 0) / totalContacts;
-    
-    return {
-      totalContacts,
-      uniqueCities: cities.size,
-      uniqueProfessions: professions.size,
-      avgRelationship: avgRelationship.toFixed(1),
-    };
+  const handleStartChat = () => {
+    setChatState("asking");
   };
 
-  const insights = getAIInsights();
+  const handleSendMessage = () => {
+    if (!userMessage.trim()) return;
+    
+    setChatState("thinking");
+    
+    // Simulate AI processing
+    setTimeout(() => {
+      // Extract team requirements from user message
+      const message = userMessage.toLowerCase();
+      
+      // Simple keyword extraction
+      const teamSizeMatch = message.match(/(\d+)\s*(kişi|kişilik|üye)/);
+      const teamSize = teamSizeMatch ? parseInt(teamSizeMatch[1]) : 3;
+      
+      // Extract skills/keywords
+      const skills = [];
+      if (message.includes('yazılım') || message.includes('kod') || message.includes('developer')) skills.push('yazılım');
+      if (message.includes('tasarım') || message.includes('design')) skills.push('tasarım');
+      if (message.includes('pazarlama') || message.includes('marketing')) skills.push('pazarlama');
+      if (message.includes('satış') || message.includes('sales')) skills.push('satış');
+      if (message.includes('muhasebe') || message.includes('finans')) skills.push('finans');
+      if (message.includes('yönetim') || message.includes('manager')) skills.push('yönetim');
+      
+      setTeamRequirements({
+        description: userMessage,
+        teamSize,
+        skills
+      });
+
+      // Find suitable team members
+      const suitableContacts = contacts.filter(contact => {
+        if (!contact.profession && !contact.services?.length && !contact.tags?.length) return false;
+        
+        const contactData = [
+          contact.profession || "",
+          ...(contact.services || []),
+          ...(contact.tags || [])
+        ].join(" ").toLowerCase();
+        
+        return skills.some(skill => contactData.includes(skill)) || 
+               (skills.length === 0 && contact.relationship_degree >= 5);
+      });
+
+      // Sort by relationship degree and limit to team size
+      const finalTeam = suitableContacts
+        .sort((a, b) => (b.relationship_degree || 0) - (a.relationship_degree || 0))
+        .slice(0, teamSize);
+
+      setSuggestedTeam(finalTeam);
+      setChatState("results");
+    }, 2000);
+  };
+
+  const resetChat = () => {
+    setUserMessage("");
+    setChatState("waiting");
+    setTeamRequirements(null);
+    setSuggestedTeam([]);
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2 fade-in">
+      <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <Bot className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold gradient-text">AI Asistan</h2>
+          <h2 className="text-2xl font-bold gradient-text">Mehmet</h2>
         </div>
-        <p className="text-muted-foreground">Ağınızı akıllıca analiz edin ve keşfedin</p>
+        <p className="text-muted-foreground">Merhaba! Ben Mehmet, senin AI ekip kurma asistanın 👋</p>
       </div>
 
-      {/* AI Insights */}
-      {insights && (
-        <Card className="modern-card p-6 slide-in" style={{animationDelay: '0.1s'}}>
-          <div className="flex items-center gap-2 mb-4">
-            <Brain className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">AI Analizi</h3>
+      {/* Chat Interface */}
+      <Card className="modern-card p-6">
+        {chatState === "waiting" && (
+          <div className="text-center space-y-4">
+            <div className="text-lg">
+              Merhaba! Sana perfect bir ekip kurmamda yardım edebilirim. 🚀
+            </div>
+            <div className="text-muted-foreground">
+              Başlamak için aşağıdaki butona tıkla ve bana nasıl bir ekibe ihtiyacın olduğunu anlat!
+            </div>
+            <Button onClick={handleStartChat} className="mt-4">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Ekip Kurma Sohbetini Başlat
+            </Button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 glass rounded-lg">
-              <div className="text-2xl font-bold gradient-text">{insights.totalContacts}</div>
-              <div className="text-xs text-muted-foreground">Toplam Kişi</div>
-            </div>
-            <div className="text-center p-3 glass rounded-lg">
-              <div className="text-2xl font-bold gradient-text">{insights.uniqueCities}</div>
-              <div className="text-xs text-muted-foreground">Şehir</div>
-            </div>
-            <div className="text-center p-3 glass rounded-lg">
-              <div className="text-2xl font-bold gradient-text">{insights.uniqueProfessions}</div>
-              <div className="text-xs text-muted-foreground">Meslek</div>
-            </div>
-            <div className="text-center p-3 glass rounded-lg">
-              <div className="text-2xl font-bold gradient-text">{insights.avgRelationship}</div>
-              <div className="text-xs text-muted-foreground">Ort. Yakınlık</div>
-            </div>
-          </div>
-        </Card>
-      )}
+        )}
 
-      {/* Search and Filters */}
-      <div className="space-y-4 slide-in" style={{animationDelay: '0.2s'}}>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="AI ile ağınızda ara..."
-            className="pl-10 h-12 hover-scale"
-          />
-        </div>
-
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => {
-            const Icon = category.icon;
-            return (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category.id)}
-                className="hover-scale"
-              >
-                <Icon className="h-4 w-4 mr-2" />
-                {category.label}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Results */}
-      {filtered.length === 0 ? (
-        <Card className="modern-card p-12 text-center slide-in" style={{animationDelay: '0.3s'}}>
-          <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {q ? "Arama kriterlerine uygun kişi bulunamadı." : "Arama yapmaya başlayın..."}
-          </p>
-        </Card>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c, index) => (
-            <Card
-              key={c.id}
-              className="modern-card p-6 hover-lift bounce-in group"
-              style={{ animationDelay: `${index * 0.1 + 0.3}s` }}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex-1">
-                  <div className="text-xl font-bold gradient-text group-hover:scale-105 transition-transform">
-                    {c.first_name} {c.last_name}
+        {chatState === "asking" && (
+          <div className="space-y-4">
+            <div className="bg-primary/10 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Bot className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <div className="font-medium text-primary mb-2">Mehmet</div>
+                  <div>
+                    Süper! Şimdi bana şunları anlat: <br/><br/>
+                    🎯 <strong>Nasıl bir ekibe ihtiyacın var?</strong> (Hangi proje için, ne yapacaksınız?)<br/>
+                    👥 <strong>Kaç kişiden oluşan bir ekip istiyorsun?</strong><br/>
+                    ⚡ <strong>Ekipte nasıl becerilere sahip kişiler olsun?</strong> (yazılım, tasarım, pazarlama vs.)<br/><br/>
+                    
+                    Ne kadar detay verirsen o kadar iyi bir ekip kurabilirim! 😊
                   </div>
-                  {c.profession && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                      <Building2 className="h-4 w-4 text-primary" />
-                      <span>{c.profession}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Textarea
+                value={userMessage}
+                onChange={(e) => setUserMessage(e.target.value)}
+                placeholder="Örnek: Mobil uygulama geliştirmek için 4 kişilik bir ekibe ihtiyacım var. Yazılım geliştirici, UI/UX tasarımcı, pazarlama uzmanı ve proje yöneticisi olsun..."
+                className="min-h-24"
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleSendMessage} disabled={!userMessage.trim()}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Ekip Kur
+                </Button>
+                <Button variant="outline" onClick={resetChat}>
+                  İptal Et
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {chatState === "thinking" && (
+          <div className="text-center space-y-4 py-8">
+            <div className="flex items-center justify-center gap-2">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+              <Bot className="h-6 w-6 text-primary" />
+            </div>
+            <div className="text-lg">Mehmet düşünüyor...</div>
+            <div className="text-muted-foreground">
+              Ağında bulunan {contacts.length} kişi arasından en uygun ekibi seçiyorum 🤔
+            </div>
+          </div>
+        )}
+
+        {chatState === "results" && teamRequirements && (
+          <div className="space-y-6">
+            <div className="bg-primary/10 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Bot className="h-6 w-6 text-primary mt-1" />
+                <div>
+                  <div className="font-medium text-primary mb-2">Mehmet</div>
+                  <div>
+                    Harika! İstediğin ekibi analiz ettim. İşte sana özel olarak seçtiğim <strong>{teamRequirements.teamSize} kişilik ekip</strong>: 🎉
+                    <br/><br/>
+                    <strong>Proje:</strong> {teamRequirements.description}
+                    {teamRequirements.skills.length > 0 && (
+                      <>
+                        <br/><strong>Aranan beceriler:</strong> {teamRequirements.skills.join(", ")}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {suggestedTeam.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Önerilen Ekip Üyeleri</h3>
+                </div>
+                
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {suggestedTeam.map((contact, index) => (
+                    <Card key={contact.id} className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="font-bold text-lg">
+                            {contact.first_name} {contact.last_name}
+                          </div>
+                          {contact.profession && (
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {contact.profession}
+                            </div>
+                          )}
+                          {contact.city && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              📍 {contact.city}
+                            </div>
+                          )}
+                          {contact.services?.length && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {contact.services.slice(0, 3).map((service, i) => (
+                                <span key={i} className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs">
+                                  {service}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">
+                            {contact.relationship_degree}/10
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Target className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <div className="font-medium text-green-800 dark:text-green-200 mb-1">
+                        Mehmet'in Tavsiyesi
+                      </div>
+                      <div className="text-sm text-green-700 dark:text-green-300">
+                        Bu ekip üyeleri senin ağındaki en uygun kişiler! Ortalama bağlantı puanları yüksek ve istediklerin becerilere sahipler. 
+                        Hemen onlarla iletişime geç ve projen için birlikte çalışmaya başlayın! 🚀
+                      </div>
                     </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs">
-                    {c.relationship_degree}/10
-                  </span>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="mb-4 p-3 glass rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <span className="font-medium">{c.city || "-"}</span>
-                </div>
-              </div>
-
-              {/* Services */}
-              {c.services?.length ? (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                    <Tag className="h-4 w-4 text-primary" />
-                    <span>Yapabilecekleri</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {c.services.slice(0, 3).map((service, i) => (
-                      <span key={i} className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs">
-                        {service}
-                      </span>
-                    ))}
-                    {c.services.length > 3 && (
-                      <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs">
-                        +{c.services.length - 3}
-                      </span>
-                    )}
                   </div>
                 </div>
-              ) : null}
-
-              {/* Tags */}
-              {c.tags?.length ? (
-                <div className="mb-4">
-                  <div className="text-sm font-medium mb-2">Özellikler</div>
-                  <div className="flex flex-wrap gap-1">
-                    {c.tags.slice(0, 2).map((tag, i) => (
-                      <span key={i} className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs">
-                        {tag}
-                      </span>
-                    ))}
-                    {c.tags.length > 2 && (
-                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs">
-                        +{c.tags.length - 2}
-                      </span>
-                    )}
-                  </div>
+              </div>
+            ) : (
+              <div className="text-center p-8">
+                <div className="text-muted-foreground mb-4">
+                  Üzgünüm, ağında istediğin kriterlere uygun yeterli kişi bulamadım. 😔
                 </div>
-              ) : null}
-
-              {/* AI Recommendation */}
-              <div className="mt-4 p-3 glass rounded-lg border-l-4 border-primary">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Zap className="h-3 w-3 text-primary" />
-                  <span className="font-medium">AI Önerisi</span>
-                </div>
-                <div className="text-xs mt-1">
-                  {c.relationship_degree >= 8 
-                    ? "Bu kişi ile güçlü bir bağlantınız var. Düzenli iletişim kurmayı öneririz."
-                    : c.relationship_degree >= 5
-                    ? "Bu bağlantıyı güçlendirmek için daha sık iletişim kurmayı deneyin."
-                    : "Bu bağlantıyı geliştirmek için ortak ilgi alanlarınızı keşfedin."
-                  }
+                <div className="text-sm text-muted-foreground">
+                  Daha fazla kişi ekleyerek ağını genişletmeyi deneyebilirsin!
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
+            )}
 
-      {/* Quick Actions */}
-      {filtered.length > 0 && (
-        <Card className="modern-card p-6 slide-in" style={{animationDelay: '0.4s'}}>
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">Hızlı Eylemler</h3>
+            <div className="flex gap-2 pt-4">
+              <Button onClick={resetChat} variant="outline">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Yeni Ekip Kur
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" className="hover-scale">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Toplu Analiz
-            </Button>
-            <Button variant="outline" size="sm" className="hover-scale">
-              <Brain className="h-4 w-4 mr-2" />
-              Bağlantı Önerileri
-            </Button>
-            <Button variant="outline" size="sm" className="hover-scale">
-              <Tag className="h-4 w-4 mr-2" />
-              Kategori Analizi
-            </Button>
-          </div>
-        </Card>
-      )}
+        )}
+      </Card>
     </div>
   );
 };
