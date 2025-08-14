@@ -229,12 +229,24 @@ const sendEmail = async (to: string, subject: string, html: string) => {
 
   const client = new SmtpClient();
   
-  await client.connectTLS({
-    hostname: smtpHost,
-    port: smtpPort,
-    username: smtpUser,
-    password: smtpPass,
-  });
+  // Use the appropriate connection method based on port and security settings
+  if (smtpPort === 465 || smtpSecure) {
+    // SSL/TLS connection for port 465
+    await client.connectTLS({
+      hostname: smtpHost,
+      port: smtpPort,
+      username: smtpUser,
+      password: smtpPass,
+    });
+  } else {
+    // STARTTLS connection for port 587
+    await client.connect({
+      hostname: smtpHost,
+      port: smtpPort,
+      username: smtpUser,
+      password: smtpPass,
+    });
+  }
 
   await client.send({
     from: fromEmail,
