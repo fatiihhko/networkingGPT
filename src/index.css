@@ -706,6 +706,67 @@ All colors MUST be HSL.
     background-color: hsl(var(--muted));
   }
 
+  /* Modern Menu Cards */
+  .menu-card {
+    @apply relative p-6 rounded-xl bg-card border border-border/50 cursor-pointer transition-all duration-300;
+    @apply hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card)/.98) 100%);
+  }
+
+  .menu-card:hover {
+    @apply scale-[1.02];
+    box-shadow: 0 8px 25px -8px hsl(var(--primary) / 0.3);
+  }
+
+  .menu-card-active {
+    @apply border-primary bg-primary/5 shadow-lg shadow-primary/20;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--primary) / 0.02) 100%);
+  }
+
+  .menu-card-content {
+    @apply flex flex-col space-y-4;
+  }
+
+  .menu-card-header {
+    @apply flex items-center justify-between;
+  }
+
+  .menu-card-icon {
+    @apply flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary;
+    @apply transition-all duration-300;
+  }
+
+  .menu-card-active .menu-card-icon {
+    @apply bg-primary text-primary-foreground scale-110;
+  }
+
+  .menu-card-indicator {
+    @apply w-2 h-2 rounded-full bg-primary animate-pulse;
+  }
+
+  .menu-card-body {
+    @apply space-y-1;
+  }
+
+  .menu-card-title {
+    @apply text-lg font-semibold text-foreground;
+    @apply transition-colors duration-300;
+  }
+
+  .menu-card-active .menu-card-title {
+    @apply text-primary;
+  }
+
+  .menu-card-description {
+    @apply text-sm text-muted-foreground;
+    @apply transition-colors duration-300;
+  }
+
+  .menu-card-active .menu-card-description {
+    @apply text-primary/80;
+  }
+
   /* Animation classes */
   .fade-in {
     animation: fadeIn 0.3s ease-in-out;

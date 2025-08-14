@@ -16,7 +16,7 @@ import { NetworkFlow } from "@/components/network/NetworkFlow";
 
 import { ContactsProvider } from "@/components/network/ContactsContext";
 import { AIAssistant } from "@/components/network/AIAssistant";
-import { UserPlus, List as ListIcon, Share2, Bot, LogOut, Sparkles } from "lucide-react";
+import { UserPlus, List as ListIcon, Share2, Bot, LogOut, Sparkles, Map } from "lucide-react";
 
 
 
@@ -166,89 +166,81 @@ const Network = () => {
 
 
       <ContactsProvider>
-        {/* Desktop mythology cards */}
+        {/* Modern Menu Cards */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-            {/* Hermes - Kişi Ekle */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+            {/* Add Contact */}
             <div 
               onClick={() => setActiveTab("add")}
-              className={`mythology-card greek-pattern ${activeTab === "add" ? "golden-glow" : ""}`}
+              className={`menu-card ${activeTab === "add" ? "menu-card-active" : ""}`}
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                                 <div className="mythology-icon">
-                   <img 
-                     src="/lovable-uploads/84a0729d-10e4-4a40-b43e-adb34ad6ab0d.png" 
-                     alt="Hermes - Messenger of Gods" 
-                     className="h-36 w-48 object-cover rounded-xl"
-                   />
-                 </div>
-                <div>
-                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Hermes</h3>
-                  <p className="text-muted-foreground">Kişi Ekle</p>
-                  <p className="text-xs text-muted-foreground mt-1">Haberciler tanrısı gibi yeni bağlantılar kurun</p>
+              <div className="menu-card-content">
+                <div className="menu-card-header">
+                  <div className="menu-card-icon">
+                    <UserPlus className="h-6 w-6" />
+                  </div>
+                  {activeTab === "add" && <div className="menu-card-indicator" />}
+                </div>
+                <div className="menu-card-body">
+                  <h3 className="menu-card-title">Kişi Ekle</h3>
+                  <p className="menu-card-description">Yeni bağlantılar kurun</p>
                 </div>
               </div>
             </div>
 
-            {/* Agora - Ağ Listesi */}
+            {/* Network List */}
             <div 
               onClick={() => setActiveTab("list")}
-              className={`mythology-card greek-pattern ${activeTab === "list" ? "golden-glow" : ""}`}
+              className={`menu-card ${activeTab === "list" ? "menu-card-active" : ""}`}
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                                 <div className="mythology-icon">
-                   <img 
-                     src="/lovable-uploads/9fb618e5-56fd-49dc-a341-8c856ba65545.png" 
-                     alt="Agora - Ancient Marketplace" 
-                     className="h-36 w-48 object-cover rounded-xl"
-                   />
-                 </div>
-                <div>
-                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Agora</h3>
-                  <p className="text-muted-foreground">Ağ Listesi</p>
-                  <p className="text-xs text-muted-foreground mt-1">Antik pazar yeri gibi tüm bağlantılarınızı görün</p>
+              <div className="menu-card-content">
+                <div className="menu-card-header">
+                  <div className="menu-card-icon">
+                    <ListIcon className="h-6 w-6" />
+                  </div>
+                  {activeTab === "list" && <div className="menu-card-indicator" />}
+                </div>
+                <div className="menu-card-body">
+                  <h3 className="menu-card-title">Ağ Listesi</h3>
+                  <p className="menu-card-description">Tüm bağlantılarınızı görün</p>
                 </div>
               </div>
             </div>
 
-            {/* Atlas - Görsel Ağ Haritası */}
+            {/* Network Map */}
             <div 
               onClick={() => setActiveTab("map")}
-              className={`mythology-card greek-pattern ${activeTab === "map" ? "golden-glow" : ""}`}
+              className={`menu-card ${activeTab === "map" ? "menu-card-active" : ""}`}
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                                 <div className="mythology-icon">
-                   <img 
-                     src="/lovable-uploads/57b52711-75e1-460c-86d2-ab82f0984651.png" 
-                     alt="Atlas - Bearer of the World" 
-                     className="h-36 w-48 object-cover rounded-xl"
-                   />
-                 </div>
-                <div>
-                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Atlas</h3>
-                  <p className="text-muted-foreground">Görsel Ağ Haritası</p>
-                  <p className="text-xs text-muted-foreground mt-1">Dünyayı taşıyan titan gibi ağınızı keşfedin</p>
+              <div className="menu-card-content">
+                <div className="menu-card-header">
+                  <div className="menu-card-icon">
+                    <Map className="h-6 w-6" />
+                  </div>
+                  {activeTab === "map" && <div className="menu-card-indicator" />}
+                </div>
+                <div className="menu-card-body">
+                  <h3 className="menu-card-title">Ağ Haritası</h3>
+                  <p className="menu-card-description">Görsel ağ keşfi</p>
                 </div>
               </div>
             </div>
 
-            {/* Pythia - Yapay Zeka Asistanı */}
+            {/* AI Assistant */}
             <div 
               onClick={() => setActiveTab("ai")}
-              className={`mythology-card greek-pattern ${activeTab === "ai" ? "golden-glow" : ""}`}
+              className={`menu-card ${activeTab === "ai" ? "menu-card-active" : ""}`}
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                                 <div className="mythology-icon">
-                   <img 
-                     src="/lovable-uploads/704fb316-91d6-4a36-9a70-acefffccb8c5.png" 
-                     alt="Pythia - Oracle of Delphi" 
-                     className="h-36 w-48 object-cover rounded-xl"
-                   />
-                 </div>
-                <div>
-                  <h3 className="text-xl font-bold" style={{color: "hsl(var(--mythology-gold))"}}>Pythia</h3>
-                  <p className="text-muted-foreground">Yapay Zeka Asistanı</p>
-                  <p className="text-xs text-muted-foreground mt-1">Delphi kahinesi gibi ağınız hakkında bilgi alın</p>
+              <div className="menu-card-content">
+                <div className="menu-card-header">
+                  <div className="menu-card-icon">
+                    <Bot className="h-6 w-6" />
+                  </div>
+                  {activeTab === "ai" && <div className="menu-card-indicator" />}
+                </div>
+                <div className="menu-card-body">
+                  <h3 className="menu-card-title">AI Asistan</h3>
+                  <p className="menu-card-description">Akıllı ağ analizi</p>
                 </div>
               </div>
             </div>
