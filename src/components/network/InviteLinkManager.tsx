@@ -104,21 +104,25 @@ export const InviteLinkManager = () => {
   const sendInfoEmail = async () => {
     if (!emailToSend) return;
 
+    console.log("📧 Starting info email send to:", emailToSend);
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke("invite-send-info-email", {
+      const { data, error } = await supabase.functions.invoke("invite-send-info-email", {
         body: {
           email: emailToSend,
         },
       });
 
+      console.log("📧 Info email response:", { data, error });
+
       if (error) throw error;
 
-      toast({ title: "Başarılı", description: "Bilgilendirme e-postası gönderildi" });
+      toast({ title: "Başarılı", description: "Bilgilendirme e-postası başarıyla gönderildi!" });
       setShowSendEmailDialog(false);
       setEmailToSend("");
     } catch (error: any) {
-      toast({ title: "Hata", description: error.message, variant: "destructive" });
+      console.error("📧 Info email error:", error);
+      toast({ title: "Hata", description: error.message || "Email gönderilirken hata oluştu", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -127,9 +131,10 @@ export const InviteLinkManager = () => {
   const sendInviteEmail = async () => {
     if (!inviteEmail) return;
 
+    console.log("📧 Starting invite email send to:", inviteEmail);
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke("send-invite-email", {
+      const { data, error } = await supabase.functions.invoke("send-invite-email", {
         body: {
           email: inviteEmail,
           message: inviteMessage,
@@ -137,15 +142,18 @@ export const InviteLinkManager = () => {
         },
       });
 
+      console.log("📧 Invite email response:", { data, error });
+
       if (error) throw error;
 
-      toast({ title: "Başarılı", description: "Davet e-postası gönderildi" });
+      toast({ title: "Başarılı", description: "Davet e-postası başarıyla gönderildi!" });
       setShowSendInviteDialog(false);
       setInviteEmail("");
       setInviteMessage("");
       setSenderName("");
     } catch (error: any) {
-      toast({ title: "Hata", description: error.message, variant: "destructive" });
+      console.error("📧 Invite email error:", error);
+      toast({ title: "Hata", description: error.message || "Email gönderilirken hata oluştu", variant: "destructive" });
     } finally {
       setLoading(false);
     }

@@ -57,14 +57,20 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 serve(async (req: Request) => {
+  console.log("📧 Info email function called, method:", req.method);
+  
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { email, contactName, inviterName } = await req.json();
+    const body = await req.json();
+    console.log("📧 Info email request body:", body);
+    
+    const { email, contactName, inviterName } = body;
 
     if (!email) {
+      console.error("📧 Info email error: Email is required");
       return new Response(JSON.stringify({ error: "Email gerekli" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },

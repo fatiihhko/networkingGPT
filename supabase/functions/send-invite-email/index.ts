@@ -68,6 +68,8 @@ interface SendInviteEmailBody {
 }
 
 serve(async (req: Request) => {
+  console.log("📧 Invite email function called, method:", req.method);
+  
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -75,8 +77,11 @@ serve(async (req: Request) => {
   try {
     // Authenticate user
     const authHeader = req.headers.get("Authorization") || "";
+    console.log("📧 Auth header present:", !!authHeader);
+    
     const jwt = authHeader.replace("Bearer ", "");
     if (!jwt) {
+      console.error("📧 Invite email error: No JWT token provided");
       return new Response(
         JSON.stringify({ error: "Giriş gerekli" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
