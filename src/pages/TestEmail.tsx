@@ -31,12 +31,12 @@ const TestEmail = () => {
         message: `NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!\n\nBu e-posta eda@rooktech.ai adresinden EmailJS ile gönderildi.\n\nTest zamanı: ${new Date().toLocaleString('tr-TR')}`
       };
 
-      // Initialize EmailJS - Bu değerleri emailjs.com'dan alın
+      // Initialize EmailJS - Artık doğru değerlerle
       const result = await emailjs.send(
-        'YOUR_SERVICE_ID',    // Service ID - emailjs.com dashboard'dan alın
-        'YOUR_TEMPLATE_ID',   // Template ID - emailjs.com dashboard'dan alın
+        'service_cqmrqtj',    // Service ID
+        'template_4cm4nqr',   // Template ID
         templateParams,
-        '2HL35Reb4zyohI0T9'   // Public Key - zaten ayarlandı
+        '2HL35Reb4zyohI0T9'   // Public Key
       );
 
       console.log('EmailJS result:', result);
