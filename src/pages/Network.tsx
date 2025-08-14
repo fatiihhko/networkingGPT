@@ -43,7 +43,7 @@ const InviteButtonInline = () => {
     }
 
     const token = (data as any)?.token as string;
-    const url = `${window.location.origin}/invite/${token}`;
+    const url = `${window.location.origin}/invite-link/${token}`;
     setLink(url);
     await navigator.clipboard.writeText(url).catch(() => {});
     toast({ title: "Davet oluşturuldu", description: "Bağlantı panoya kopyalandı." });
@@ -106,7 +106,7 @@ const InviteButtonMobile = () => {
     }
 
     const token = (data as any)?.token as string;
-    const url = `${window.location.origin}/invite/${token}`;
+    const url = `${window.location.origin}/invite-link/${token}`;
     setLink(url);
     await navigator.clipboard.writeText(url).catch(() => {});
     toast({ title: "Davet oluşturuldu", description: "Bağlantı panoya kopyalandı." });
