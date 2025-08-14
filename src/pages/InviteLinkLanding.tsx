@@ -312,13 +312,9 @@ export const InviteLinkLanding = () => {
                   <div className="space-y-4">
                     <div className="text-center">
                       <h3 className="text-lg font-semibold mb-2">Tanıdıklarınızı Ekleyin</h3>
-                      <p className="text-muted-foreground">
-                        Ağınıza eklemek istediğiniz kişilerin bilgilerini girin.
-                        <br />
-                        <span className="text-sm">
-                          {isUnlimited ? "Sınırsız kullanım" : `Kalan slot: ${remainingSlots}`}
-                        </span>
-                      </p>
+                                        <p className="text-muted-foreground">
+                    Ağınıza eklemek istediğiniz kişilerin bilgilerini girin.
+                  </p>
                     </div>
                     <ContactForm 
                       inviteToken={token}

@@ -82,41 +82,44 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
   // If inviteToken exists, submit via Edge Function (no auth required)
   if (inviteToken) {
     try {
-      // First, submit the contact
-      const response = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/invite-submit-new`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcW5uYXNzZ2JpaG5yamtjZWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjQzOTQsImV4cCI6MjA3MDQwMDM5NH0.quHEwhAvPUi8QinNJM4dTnN7MQXlmHKAt0BpYnNosoc`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcW5uYXNzZ2JpaG5yamtjZWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjQzOTQsImV4cCI6MjA3MDQwMDM5NH0.quHEwhAvPUi8QinNJM4dTnN7MQXlmHKAt0BpYnNosoc'
-        },
-        body: JSON.stringify({
-          token: inviteToken,
-          sendEmail: false, // We'll handle email separately with SendGrid
-          base_url: window.location.origin,
-          contact: {
-            first_name: values.first_name,
-            last_name: values.last_name,
-            city: values.city,
-            profession: values.profession,
-            relationship_degree: values.relationship_degree,
-            services: servicesArr,
-            tags: tagsArr,
-            phone: values.phone,
-            email: values.email || null,
-            description: values.description,
-            parent_contact_id: parentContactId ?? null,
-          },
-        })
-      });
+      // For 2nd stage, we need to get the invite owner's user_id
+      const { data: inviteData, error: inviteError } = await supabase
+        .from("invites")
+        .select("owner_user_id")
+        .eq("token", inviteToken)
+        .single();
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen hata' }));
-        toast({ title: "Kaydedilemedi", description: errorData.error || `HTTP ${response.status}`, variant: "destructive" });
+      if (inviteError || !inviteData) {
+        toast({ title: "Hata", description: "Davet bilgileri bulunamadı", variant: "destructive" });
         return;
       }
 
-      const data = await response.json();
+      // Insert contact directly to the invite owner's contacts
+      const { data: inserted, error: insertError } = await supabase
+        .from("contacts")
+        .insert({
+          user_id: inviteData.owner_user_id,
+          first_name: values.first_name,
+          last_name: values.last_name,
+          city: values.city,
+          profession: values.profession,
+          relationship_degree: values.relationship_degree,
+          services: servicesArr,
+          tags: tagsArr,
+          phone: values.phone,
+          email: values.email || null,
+          description: values.description,
+          parent_contact_id: parentContactId ?? null,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        toast({ title: "Kaydedilemedi", description: insertError.message, variant: "destructive" });
+        return;
+      }
+
+      const data = { contact: inserted };
       
       // If contact has email, send invite via SendGrid automatically
       if (values.email) {
