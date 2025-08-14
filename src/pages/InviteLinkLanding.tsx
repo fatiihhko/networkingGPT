@@ -89,29 +89,37 @@ export const InviteLinkLanding = () => {
 
     setSubmitting(true);
     try {
-      // First, add the person themselves to the system
-      const { data, error } = await supabase.functions.invoke("invite-submit", {
-        body: {
-          token,
-          contact: contactData,
-          sendEmail: false,
-        },
-      });
+      // Check if person exists in system by email
+      const { data: existingContact, error: checkError } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("email", contactData.email)
+        .single();
 
-      if (error) {
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
         toast({
           title: "Hata",
-          description: error.message || "Kişi eklenirken hata oluştu",
+          description: "Sistem kontrolü sırasında hata oluştu",
           variant: "destructive",
         });
         return;
       }
 
-      setSelfContact(data);
+      if (!existingContact) {
+        toast({
+          title: "Kayıtlı Değil",
+          description: "Bu e-posta adresi sistemde kayıtlı değil. Lütfen doğru e-posta adresini girin.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Person exists, proceed to next step
+      setSelfContact(existingContact);
       setStep('add-others');
       toast({
         title: "Hoş geldiniz!",
-        description: "Başarıyla sisteme eklendiniz. Şimdi tanıdıklarınızı ekleyebilirsiniz.",
+        description: `Merhaba ${existingContact.first_name}! Şimdi tanıdıklarınızı ekleyebilirsiniz.`,
       });
     } catch (err: any) {
       toast({
@@ -125,7 +133,7 @@ export const InviteLinkLanding = () => {
   };
 
   const handleAddOthers = async (contactData: any, sendEmail: boolean = false) => {
-    if (!token || !linkInfo) return;
+    if (!token || !linkInfo || !selfContact) return;
 
     setSubmitting(true);
     try {
@@ -135,7 +143,7 @@ export const InviteLinkLanding = () => {
           token,
           contact: {
             ...contactData,
-            parent_contact_id: selfContact?.id || null,
+            parent_contact_id: selfContact.id, // Always use the self contact as parent
           },
           sendEmail,
         },
@@ -252,7 +260,7 @@ export const InviteLinkLanding = () => {
             <CardTitle className="flex items-center justify-between">
               <span>{linkInfo.name}</span>
               <div className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
-                {isUnlimited ? `${linkInfo.used_count} kullanıldı (sınırsız)` : `${linkInfo.used_count}/${linkInfo.limit_count} kullanıldı`}
+                Davet Bağlantısı
               </div>
             </CardTitle>
           </CardHeader>
