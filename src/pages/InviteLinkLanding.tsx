@@ -62,11 +62,15 @@ export const InviteLinkLanding = () => {
       }
 
       const chain = inviteData.invite_chains;
+      const maxUses = chain.max_uses || 0;
+      const remainingUses = chain.remaining_uses || 0;
+      const usedCount = maxUses > 0 ? maxUses - remainingUses : 0;
+      
       const linkInfo = {
         id: inviteData.id,
         name: "Davet Bağlantısı",
-        limit_count: chain.max_uses || 0,
-        used_count: (chain.max_uses || 0) - (chain.remaining_uses || 0),
+        limit_count: maxUses,
+        used_count: usedCount,
         status: chain.status
       };
 
@@ -177,8 +181,9 @@ export const InviteLinkLanding = () => {
     );
   }
 
-  const remainingSlots = linkInfo.limit_count - linkInfo.used_count;
-  const isLimitReached = remainingSlots <= 0;
+  const isUnlimited = linkInfo.limit_count === 0;
+  const remainingSlots = isUnlimited ? null : linkInfo.limit_count - linkInfo.used_count;
+  const isLimitReached = !isUnlimited && remainingSlots <= 0;
 
   return (
     <div className="min-h-screen p-4">
@@ -201,7 +206,7 @@ export const InviteLinkLanding = () => {
             <CardTitle className="flex items-center justify-between">
               <span>{linkInfo.name}</span>
               <div className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
-                {linkInfo.used_count}/{linkInfo.limit_count} kullanıldı
+                {isUnlimited ? `${linkInfo.used_count} kullanıldı (sınırsız)` : `${linkInfo.used_count}/${linkInfo.limit_count} kullanıldı`}
               </div>
             </CardTitle>
           </CardHeader>
@@ -226,7 +231,9 @@ export const InviteLinkLanding = () => {
                   <p className="text-muted-foreground">
                     Ağa eklemek istediğiniz kişinin bilgilerini girin.
                     <br />
-                    <span className="text-sm">Kalan slot: {remainingSlots}</span>
+                    <span className="text-sm">
+                      {isUnlimited ? "Sınırsız kullanım" : `Kalan slot: ${remainingSlots}`}
+                    </span>
                   </p>
                 </div>
                 <ContactForm 
