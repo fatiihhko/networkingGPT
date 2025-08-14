@@ -106,7 +106,7 @@ export const AIAssistant = () => {
         {chatState === "waiting" && (
           <div className="text-center space-y-4">
             <div className="text-lg">
-              Merhaba! Sana perfect bir ekip kurmamda yardım edebilirim. 🚀
+              Merhaba! Sana mükemmel bir ekip kurmamda yardım edebilirim. 🚀
             </div>
             <div className="text-muted-foreground">
               Başlamak için aşağıdaki butona tıkla ve bana nasıl bir ekibe ihtiyacın olduğunu anlat!
