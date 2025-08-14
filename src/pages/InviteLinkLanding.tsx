@@ -21,6 +21,8 @@ export const InviteLinkLanding = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState<'welcome' | 'self-add' | 'add-others'>('self-add');
+  const [selfContact, setSelfContact] = useState<any>(null);
 
   const fetchLinkInfo = async () => {
     if (!token) {
@@ -30,20 +32,51 @@ export const InviteLinkLanding = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("invite_links")
-        .select("*")
-        .eq("token", token)
-        .eq("status", "active")
-        .single();
+      // Use invite-lookup function to check token validity
+      const { data, error } = await supabase.functions.invoke("invite-lookup", {
+        body: { token }
+      });
 
-      if (error || !data) {
+      if (error || !data || !data.valid) {
         setError("Davet bağlantısı bulunamadı veya devre dışı");
         setLoading(false);
         return;
       }
 
-      setLinkInfo(data);
+      // Get invite details from invites table
+      const { data: inviteData, error: inviteError } = await supabase
+        .from("invites")
+        .select(`
+          id,
+          token,
+          max_uses,
+          uses_count,
+          status,
+          invite_chains!inner(max_uses, remaining_uses, status)
+        `)
+        .eq("token", token)
+        .single();
+
+      if (inviteError || !inviteData) {
+        setError("Davet bağlantısı bulunamadı veya devre dışı");
+        setLoading(false);
+        return;
+      }
+
+      const chain = inviteData.invite_chains;
+      const maxUses = chain.max_uses || 0;
+      const remainingUses = chain.remaining_uses || 0;
+      const usedCount = maxUses > 0 ? maxUses - remainingUses : 0;
+      
+      const linkInfo = {
+        id: inviteData.id,
+        name: "Davet Bağlantısı",
+        limit_count: maxUses,
+        used_count: usedCount,
+        status: chain.status
+      };
+
+      setLinkInfo(linkInfo);
     } catch (err) {
       setError("Davet bağlantısı yüklenirken hata oluştu");
     } finally {
@@ -51,18 +84,97 @@ export const InviteLinkLanding = () => {
     }
   };
 
-  const handleContactSubmit = async (contactData: any, sendEmail: boolean = false) => {
+  const handleSelfAdd = async (contactData: any) => {
     if (!token || !linkInfo) return;
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invite-link-submit", {
-        body: {
-          token,
-          contact: contactData,
-          sendEmail,
-        },
+      // Check if person exists in system by email
+      const { data: existingContact, error: checkError } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("email", contactData.email)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        toast({
+          title: "Hata",
+          description: "Sistem kontrolü sırasında hata oluştu",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!existingContact) {
+        toast({
+          title: "Kayıtlı Değil",
+          description: "Bu e-posta adresi sistemde kayıtlı değil. Lütfen doğru e-posta adresini girin.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Person exists, proceed to next step
+      setSelfContact(existingContact);
+      setStep('add-others');
+      toast({
+        title: "Hoş geldiniz!",
+        description: `Merhaba ${existingContact.first_name}! Şimdi tanıdıklarınızı ekleyebilirsiniz.`,
       });
+    } catch (err: any) {
+      toast({
+        title: "Hata",
+        description: err.message || "Beklenmeyen bir hata oluştu",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAddOthers = async (contactData: any, sendEmail: boolean = false) => {
+    if (!token || !linkInfo || !selfContact) return;
+
+    setSubmitting(true);
+    try {
+      // Get the invite owner's user_id (this is the main center)
+      const { data: inviteData, error: inviteError } = await supabase
+        .from("invites")
+        .select("owner_user_id")
+        .eq("token", token)
+        .single();
+
+      if (inviteError || !inviteData) {
+        toast({ title: "Hata", description: "Davet bilgileri bulunamadı", variant: "destructive" });
+        return;
+      }
+
+      // Insert contact with selfContact as parent (connected to the person from step 1)
+      const { data: inserted, error: insertError } = await supabase
+        .from("contacts")
+        .insert({
+          user_id: inviteData.owner_user_id, // This goes to the main center's network
+          first_name: contactData.first_name,
+          last_name: contactData.last_name,
+          city: contactData.city,
+          profession: contactData.profession,
+          relationship_degree: contactData.relationship_degree,
+          services: contactData.services,
+          tags: contactData.tags,
+          phone: contactData.phone,
+          email: contactData.email || null,
+          description: contactData.description,
+          parent_contact_id: selfContact.id, // Connected to the person from step 1
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        toast({ title: "Kaydedilemedi", description: insertError.message, variant: "destructive" });
+        return;
+      }
+
+      const data = { contact: inserted };
 
       if (error) {
         if (error.message?.includes("limitine ulaştı")) {
@@ -150,8 +262,9 @@ export const InviteLinkLanding = () => {
     );
   }
 
-  const remainingSlots = linkInfo.limit_count - linkInfo.used_count;
-  const isLimitReached = remainingSlots <= 0;
+  const isUnlimited = linkInfo.limit_count === 0;
+  const remainingSlots = isUnlimited ? null : linkInfo.limit_count - linkInfo.used_count;
+  const isLimitReached = !isUnlimited && remainingSlots <= 0;
 
   return (
     <div className="min-h-screen p-4">
@@ -174,7 +287,7 @@ export const InviteLinkLanding = () => {
             <CardTitle className="flex items-center justify-between">
               <span>{linkInfo.name}</span>
               <div className="text-sm font-normal bg-primary/10 text-primary px-2 py-1 rounded">
-                {linkInfo.used_count}/{linkInfo.limit_count} kullanıldı
+                Davet Bağlantısı
               </div>
             </CardTitle>
           </CardHeader>
@@ -194,18 +307,43 @@ export const InviteLinkLanding = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold mb-2">Yeni Kişi Ekle</h3>
-                  <p className="text-muted-foreground">
-                    Ağa eklemek istediğiniz kişinin bilgilerini girin.
-                    <br />
-                    <span className="text-sm">Kalan slot: {remainingSlots}</span>
-                  </p>
-                </div>
-                <ContactForm 
-                  inviteToken={token}
-                  onSuccess={(contact, values, sendEmail) => handleContactSubmit(values, sendEmail)}
-                />
+                {step === 'welcome' && (
+                  <div className="text-center space-y-4">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-2">Networking GPT'e Hoş Geldiniz!</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Ağınızı oluşturmaya başlamak için önce kendinizi sisteme ekleyin.
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => setStep('self-add')}
+                      className="w-full"
+                      size="lg"
+                    >
+                      Kendimi Ekle
+                    </Button>
+                  </div>
+                )}
+
+                {step === 'self-add' && (
+                  <div className="space-y-4">
+                    <ContactForm 
+                      inviteToken={token}
+                      onSuccess={(contact, values) => handleSelfAdd(values)}
+                      isSelfAdd={true}
+                    />
+                  </div>
+                )}
+
+                                {step === 'add-others' && (
+                  <div className="space-y-4">
+                    <ContactForm 
+                      inviteToken={token}
+                      onSuccess={(contact, values, sendEmail) => handleAddOthers(values, sendEmail)}
+                      isSelfAdd={false}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
