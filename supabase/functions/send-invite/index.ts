@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,78 +57,40 @@ const cleanupOldRequests = () => {
 };
 
 const sendEmail = async (to: string, subject: string, html: string) => {
-  const smtpHost = Deno.env.get('SMTP_HOST');
-  const smtpPort = Deno.env.get('SMTP_PORT');
-  const smtpSecure = Deno.env.get('SMTP_SECURE');
-  const smtpUser = Deno.env.get('SMTP_USER');
-  const smtpPass = Deno.env.get('SMTP_PASS');
+  const resendApiKey = Deno.env.get('RESEND_API_KEY');
   const fromEmail = Deno.env.get('FROM_EMAIL') || 'eda@rooktech.ai';
 
-  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-    console.error('SMTP configuration missing:', {
-      host: !!smtpHost,
-      port: !!smtpPort,
-      user: !!smtpUser,
-      pass: !!smtpPass
-    });
-    throw new Error('SMTP configuration not complete');
+  if (!resendApiKey) {
+    throw new Error('Resend API key not configured');
   }
 
-  console.log(`Sending email via SMTP to: ${to}`);
+  console.log(`Sending email via Resend to: ${to}`);
   console.log(`Subject: ${subject}`);
   console.log(`From: ${fromEmail}`);
-  console.log(`SMTP Host: ${smtpHost}:${smtpPort}`);
+
+  const resend = new Resend(resendApiKey);
 
   try {
-    // Use SMTPjs library via CDN
-    const SMTPResponse = await fetch('https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js');
-    
-    // Alternative: Use a simple HTTP SMTP relay service
-    // This is more reliable than raw TCP in edge functions
-    const emailData = {
-      host: smtpHost,
-      port: parseInt(smtpPort),
-      secure: smtpSecure === 'true',
-      auth: {
-        user: smtpUser,
-        pass: smtpPass
-      },
-      from: fromEmail,
-      to: to,
+    const emailResponse = await resend.emails.send({
+      from: `NetworkGPT <${fromEmail}>`,
+      to: [to],
       subject: subject,
-      html: html
-    };
-
-    // Use a webhook-based SMTP service or direct implementation
-    console.log('Attempting to send email with configuration:', {
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      from: fromEmail,
-      to: to
+      html: html,
     });
 
-    // For now, let's use a simpler approach that works in Supabase Edge Functions
-    // We'll implement a basic email queue or use a reliable service
+    console.log('Resend response:', emailResponse);
 
-    // Simple success response for testing
-    console.log(`Email queued for delivery to: ${to} from: ${fromEmail}`);
-    console.log(`SMTP Config - Host: ${smtpHost}, Port: ${smtpPort}, User: ${smtpUser}`);
-    
-    // Return success for now, actual SMTP implementation would need a different approach
-    // in Supabase Edge Functions (they have limitations on raw TCP connections)
-    return { 
-      success: true, 
-      id: `smtp_${Date.now()}`, 
-      method: 'queued',
-      message: 'Email queued - SMTP config verified' 
-    };
+    if (emailResponse.error) {
+      console.error('Resend error:', emailResponse.error);
+      throw new Error(`Resend API error: ${emailResponse.error.message}`);
+    }
+
+    console.log(`Email sent successfully via Resend to: ${to}`);
+    return { success: true, id: emailResponse.data?.id || `resend_${Date.now()}` };
 
   } catch (error: any) {
-    console.error('SMTP error:', error.message);
-    console.error('Error details:', error);
-    
-    throw new Error(`SMTP Error: ${error.message}`);
+    console.error('Resend error:', error.message);
+    throw new Error(`Resend Error: ${error.message}`);
   }
 };
 

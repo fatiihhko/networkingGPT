@@ -56,7 +56,7 @@ const TestEmail = () => {
                 <div class="header">
                     <h1>✅ Test E-postası</h1>
                     <p class="success">NetworkGPT.tech e-posta sistemi başarıyla çalışıyor!</p>
-                    <p>Bu e-posta eda@rooktech.ai adresinden gönderildi.</p>
+                    <p>Bu e-posta eda@rooktech.ai adresinden Resend ile gönderildi.</p>
                     <hr>
                     <p><small>Test zamanı: ${new Date().toLocaleString('tr-TR')}</small></p>
                 </div>
@@ -170,9 +170,9 @@ const TestEmail = () => {
           </div>
 
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>• Test e-postası eda@rooktech.ai adresinden gönderilir</p>
-            <p>• SMTP ayarları Supabase secrets'ta yapılandırılmalıdır</p>
-            <p>• Konsol loglarını kontrol edin</p>
+            <p>• Test e-postası eda@rooktech.ai adresinden Resend ile gönderilir</p>
+            <p>• RESEND_API_KEY Supabase secrets'ta yapılandırılmalıdır</p>
+            <p>• Resend.com'da domain doğrulaması gerekir</p>
           </div>
         </Card>
       </div>
