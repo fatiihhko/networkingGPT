@@ -31,8 +31,9 @@ const App = () => (
             }
           />
           <Route path="/test-email" element={<TestEmail />} />
-          <Route path="/invite/:token" element={<InviteLanding />} />
           <Route path="/invite-link/:token" element={<InviteLinkLanding />} />
+          {/* Redirect old invite format to new format */}
+          <Route path="/invite/:token" element={<InviteLinkLanding />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
