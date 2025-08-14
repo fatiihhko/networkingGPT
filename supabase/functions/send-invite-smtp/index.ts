@@ -226,6 +226,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   }
 
   console.log(`Sending email via SMTP to: ${to}`);
+  console.log(`SMTP Config: ${smtpHost}:${smtpPort}, TLS: ${smtpSecure}`);
 
   const client = new SMTPClient({
     connection: {
@@ -254,7 +255,11 @@ const sendEmail = async (to: string, subject: string, html: string) => {
     console.error('SMTP error:', error);
     throw new Error(`Email sending failed: ${error.message}`);
   } finally {
-    await client.close();
+    try {
+      await client.close();
+    } catch (closeError) {
+      console.warn('Error closing SMTP connection:', closeError);
+    }
   }
 };
 
