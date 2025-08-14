@@ -184,35 +184,14 @@ const ContactCard = memo(({
 ));
 
 const ContactList = memo(() => {
-  const [contacts, setContacts] = useState<Contact[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const { setContacts: setCtxContacts } = useContacts();
+  const { contacts, setContacts, isLoading } = useContacts();
 
+  // Initialize filtered contacts when contacts change
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from("contacts")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (!mounted) return;
-      if (!error && data) {
-        setContacts(data as any);
-        setFilteredContacts(data as any);
-        try { setCtxContacts(data as any); } catch {}
-      }
-      setIsLoading(false);
-    };
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
+    setFilteredContacts(contacts);
+  }, [contacts]);
 
   // Debounced search for better performance
   useEffect(() => {
@@ -243,11 +222,9 @@ const ContactList = memo(() => {
     } else {
       const updated = contacts.filter((c) => c.id !== id);
       setContacts(updated);
-      setFilteredContacts(updated);
-      try { setCtxContacts(updated); } catch {}
       toast({ title: "Kişi silindi", description: "Kişi ağınızdan kaldırıldı." });
     }
-  }, [contacts, setCtxContacts]);
+  }, [contacts, setContacts]);
 
   const degreeMap = useMemo(() => {
     const map = new Map<string, Contact>();

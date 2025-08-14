@@ -218,7 +218,11 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
       }
       
+      
       onSuccess?.(data?.contact ?? null, values, sendEmail);
+      
+      // Refresh contacts context
+      window.dispatchEvent(new CustomEvent("contacts:refresh"));
     } catch (error: any) {
       toast({ title: "Kaydedilemedi", description: error.message || "Bilinmeyen hata", variant: "destructive" });
       return;
@@ -274,6 +278,9 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
     toast({ title: "Kişi eklendi", description: "Ağınıza yeni kişi eklendi." });
     onSuccess?.(inserted, values);
     form.reset({ relationship_degree: 5 });
+    
+    // Refresh contacts context
+    window.dispatchEvent(new CustomEvent("contacts:refresh"));
   }
   setIsSubmitting(false);
 };
