@@ -349,51 +349,57 @@ export const NetworkFlow = () => {
         type: "default",
                   data: {
            label: (
-             <Tooltip>
-               <TooltipTrigger asChild>
-                 <div className="flex flex-col items-center text-center p-4">
-                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center mb-3 shadow-sm border border-border/20">
-                     {hasChildren ? (
-                       <Users className="h-5 w-5 text-primary" />
-                     ) : (
-                       <UserCheck className="h-5 w-5 text-muted-foreground" />
+             <div className="relative z-[10000]">
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                   <div className="flex flex-col items-center text-center p-4">
+                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center mb-3 shadow-sm border border-border/20">
+                       {hasChildren ? (
+                         <Users className="h-5 w-5 text-primary" />
+                       ) : (
+                         <UserCheck className="h-5 w-5 text-muted-foreground" />
+                       )}
+                     </div>
+                     <div className="font-semibold text-sm text-card-foreground mb-1 leading-tight text-center max-w-[100px]">
+                       {contact.first_name} {contact.last_name}
+                     </div>
+                     {contact.profession && (
+                       <div className="text-xs text-muted-foreground text-center max-w-[100px] truncate">
+                         {contact.profession}
+                       </div>
                      )}
                    </div>
-                   <div className="font-semibold text-sm text-card-foreground mb-1 leading-tight text-center max-w-[100px]">
-                     {contact.first_name} {contact.last_name}
+                 </TooltipTrigger>
+                 <TooltipContent 
+                   className="glass-dark max-w-xs z-[10000] bg-popover/95 backdrop-blur-md border border-border/50 shadow-2xl"
+                   side="top"
+                   sideOffset={10}
+                 >
+                   <div className="space-y-2 relative z-[10000]">
+                     <div className="font-semibold">{contact.first_name} {contact.last_name}</div>
+                     <div className="text-sm text-muted-foreground">E-posta: {contact.email || "-"}</div>
+                     <div className="text-sm text-muted-foreground">Meslek: {contact.profession || "-"}</div>
+                     <div className="text-sm text-muted-foreground">Şehir: {contact.city || "-"}</div>
+                     <div className="text-sm text-muted-foreground">Telefon: {contact.phone || "-"}</div>
+                     <div className="text-sm text-muted-foreground">Yakınlık: {contact.relationship_degree}/10</div>
+                     <div className="text-sm text-muted-foreground">Seviye: {networkContact.level}</div>
+                     {hasChildren && (
+                       <div className="text-sm text-primary">Davet ettiği: {networkContact.children.length} kişi</div>
+                     )}
+                     {contact.services?.length > 0 && (
+                       <div className="text-sm text-muted-foreground">
+                         Hizmetler: {contact.services.join(", ")}
+                       </div>
+                     )}
+                     {contact.tags?.length > 0 && (
+                       <div className="text-sm text-muted-foreground">
+                         Etiketler: {contact.tags.join(", ")}
+                       </div>
+                     )}
                    </div>
-                   {contact.profession && (
-                     <div className="text-xs text-muted-foreground text-center max-w-[100px] truncate">
-                       {contact.profession}
-                     </div>
-                   )}
-                 </div>
-               </TooltipTrigger>
-                               <TooltipContent className="glass-dark max-w-xs z-[9999] bg-popover/95 backdrop-blur-md border border-border/50">
-                  <div className="space-y-2">
-                    <div className="font-semibold">{contact.first_name} {contact.last_name}</div>
-                    <div className="text-sm text-muted-foreground">E-posta: {contact.email || "-"}</div>
-                    <div className="text-sm text-muted-foreground">Meslek: {contact.profession || "-"}</div>
-                    <div className="text-sm text-muted-foreground">Şehir: {contact.city || "-"}</div>
-                    <div className="text-sm text-muted-foreground">Telefon: {contact.phone || "-"}</div>
-                    <div className="text-sm text-muted-foreground">Yakınlık: {contact.relationship_degree}/10</div>
-                    <div className="text-sm text-muted-foreground">Seviye: {networkContact.level}</div>
-                    {hasChildren && (
-                      <div className="text-sm text-primary">Davet ettiği: {networkContact.children.length} kişi</div>
-                    )}
-                    {contact.services?.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        Hizmetler: {contact.services.join(", ")}
-                      </div>
-                    )}
-                    {contact.tags?.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        Etiketler: {contact.tags.join(", ")}
-                      </div>
-                    )}
-                  </div>
-                </TooltipContent>
-             </Tooltip>
+                 </TooltipContent>
+               </Tooltip>
+             </div>
            ),
            contact,
            isManuallyAdded,
