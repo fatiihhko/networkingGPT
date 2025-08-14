@@ -158,7 +158,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
                             Bu platform, profesyonel ağınızı genişletmenize yardımcı olur.
                         </p>
                         
-                        <a href="${window.location.origin}/invite-link/${inviteToken}" class="cta-button">
+                        <a href="${window.location.origin}/invite/${inviteToken}" class="cta-button">
                             Daveti Kabul Et ve Katıl
                         </a>
                         
