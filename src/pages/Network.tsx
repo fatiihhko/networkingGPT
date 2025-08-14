@@ -131,7 +131,7 @@ const Network = () => {
           <div className="md:hidden">
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="sm" className="btn-modern hover-lift">
+                <Button size="sm" variant="outline" className="hover-lift hover-glow w-10 h-10 p-0">
                   <Sparkles className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
@@ -157,7 +157,7 @@ const Network = () => {
               </DialogContent>
             </Dialog>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift hover-glow">
+          <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift hover-glow w-10 h-10 p-0 md:w-auto md:h-auto md:px-3 md:py-2">
             <LogOut className="h-4 w-4" />
             <span className="hidden md:inline ml-2">Çıkış</span>
           </Button>
