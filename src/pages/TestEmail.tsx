@@ -58,10 +58,26 @@ const TestEmail = () => {
       }
     } catch (error: any) {
       console.error('EmailJS test error:', error);
-      setLastResult({ success: false, message: error.message || 'Beklenmeyen hata' });
+      
+      let errorMessage = 'Beklenmeyen hata';
+      if (error.status === 400) {
+        if (error.text?.includes('service ID not found')) {
+          errorMessage = 'Service ID bulunamadı. EmailJS dashboard\'ınızı kontrol edin.';
+        } else if (error.text?.includes('template')) {
+          errorMessage = 'Template ID hatalı veya bulunamadı.';
+        } else {
+          errorMessage = `EmailJS API Hatası: ${error.text || error.message}`;
+        }
+      } else if (error.status === 403) {
+        errorMessage = 'Public Key hatalı veya geçersiz.';
+      } else {
+        errorMessage = `HTTP ${error.status}: ${error.text || error.message}`;
+      }
+      
+      setLastResult({ success: false, message: errorMessage });
       toast({ 
-        title: "Hata", 
-        description: error.message || 'Beklenmeyen hata oluştu',
+        title: "EmailJS Hatası", 
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
