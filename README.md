@@ -110,19 +110,6 @@ npm install
 npm run dev
 ```
 
-### Production Deployment
-```bash
-# Automated deployment
-./deploy.sh
-
-# Manual deployment
-npm run build
-# Copy dist/ contents to your web server
-```
-
-### Davet Linkleri
-Davet linkleri artık `/invite-link/{token}` formatında çalışır. Eski `/invite/{token}` formatı da geriye uyumluluk için desteklenir.
-
 ### Key Features Implementation
 - **Avatar System**: Uses Radix UI Avatar with custom fallback logic
 - **Color Tokens**: Centralized color system for consistent theming

@@ -27,36 +27,19 @@ const schema = z.object({
   description: z.string().optional(),
 });
 
-const selfAddSchema = z.object({
-  first_name: z.string().min(1, "Zorunlu"),
-  last_name: z.string().min(1, "Zorunlu"),
-  email: z.string().email("Geçersiz e-posta").min(1, "Zorunlu"),
-});
-
 const ContactForm = memo(({
   parentContactId,
   onSuccess,
   inviteToken,
-  isSelfAdd = false,
 }: {
   parentContactId?: string;
   onSuccess?: (contact: any, values: z.infer<typeof schema>, sendEmail?: boolean) => void;
   inviteToken?: string;
-  isSelfAdd?: boolean;
 }) => {
 const form = useForm<z.infer<typeof schema>>({
-  resolver: zodResolver(isSelfAdd ? selfAddSchema : schema),
+  resolver: zodResolver(schema),
   defaultValues: {
     relationship_degree: 5,
-    first_name: "",
-    last_name: "",
-    email: "",
-    city: "",
-    profession: "",
-    services: "",
-    tags: "",
-    phone: "",
-    description: "",
   },
 });
 const [sendEmail, setSendEmail] = useState(false);
@@ -64,62 +47,47 @@ const [isSubmitting, setIsSubmitting] = useState(false);
 
 const onSubmit = async (values: z.infer<typeof schema>) => {
   setIsSubmitting(true);
-  
-  // If it's self-add, only use the basic fields
-  if (isSelfAdd) {
-    onSuccess?.({ 
-      first_name: values.first_name,
-      last_name: values.last_name,
-      email: values.email
-    }, values);
-    setIsSubmitting(false);
-    return;
-  }
-
   const servicesArr = values.services?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
   const tagsArr = values.tags?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
 
   // If inviteToken exists, submit via Edge Function (no auth required)
   if (inviteToken) {
     try {
-      // For 2nd stage, we need to get the invite owner's user_id
-      const { data: inviteData, error: inviteError } = await supabase
-        .from("invites")
-        .select("owner_user_id")
-        .eq("token", inviteToken)
-        .single();
-
-      if (inviteError || !inviteData) {
-        toast({ title: "Hata", description: "Davet bilgileri bulunamadı", variant: "destructive" });
-        return;
-      }
-
-      // Insert contact directly to the invite owner's contacts
-      const { data: inserted, error: insertError } = await supabase
-        .from("contacts")
-        .insert({
-          user_id: inviteData.owner_user_id,
-          first_name: values.first_name,
-          last_name: values.last_name,
-          city: values.city,
-          profession: values.profession,
-          relationship_degree: values.relationship_degree,
-          services: servicesArr,
-          tags: tagsArr,
-          phone: values.phone,
-          email: values.email || null,
-          description: values.description,
-          parent_contact_id: parentContactId ?? null,
+      // First, submit the contact
+      const response = await fetch(`https://ysqnnassgbihnrjkcekb.supabase.co/functions/v1/invite-submit-new`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcW5uYXNzZ2JpaG5yamtjZWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjQzOTQsImV4cCI6MjA3MDQwMDM5NH0.quHEwhAvPUi8QinNJM4dTnN7MQXlmHKAt0BpYnNosoc`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzcW5uYXNzZ2JpaG5yamtjZWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjQzOTQsImV4cCI6MjA3MDQwMDM5NH0.quHEwhAvPUi8QinNJM4dTnN7MQXlmHKAt0BpYnNosoc'
+        },
+        body: JSON.stringify({
+          token: inviteToken,
+          sendEmail: false, // We'll handle email separately with SendGrid
+          base_url: window.location.origin,
+          contact: {
+            first_name: values.first_name,
+            last_name: values.last_name,
+            city: values.city,
+            profession: values.profession,
+            relationship_degree: values.relationship_degree,
+            services: servicesArr,
+            tags: tagsArr,
+            phone: values.phone,
+            email: values.email || null,
+            description: values.description,
+            parent_contact_id: parentContactId ?? null,
+          },
         })
-        .select()
-        .single();
+      });
 
-      if (insertError) {
-        toast({ title: "Kaydedilemedi", description: insertError.message, variant: "destructive" });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Bilinmeyen hata' }));
+        toast({ title: "Kaydedilemedi", description: errorData.error || `HTTP ${response.status}`, variant: "destructive" });
         return;
       }
 
-      const data = { contact: inserted };
+      const data = await response.json();
       
       // If contact has email, send invite via SendGrid automatically
       if (values.email) {
@@ -190,7 +158,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
                             Bu platform, profesyonel ağınızı genişletmenize yardımcı olur.
                         </p>
                         
-                        <a href="${window.location.origin}/invite-link/${inviteToken}" class="cta-button">
+                        <a href="${window.location.origin}/invite/${inviteToken}" class="cta-button">
                             Daveti Kabul Et ve Katıl
                         </a>
                         
@@ -328,16 +296,9 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
       <div className="text-center space-y-2 fade-in">
         <div className="flex items-center justify-center gap-2">
           <UserPlus className="h-6 w-6 text-white" />
-          <h2 className="text-2xl font-bold text-white">
-            {isSelfAdd ? "Kendinizi Ekleyin" : "Yeni Kişi Ekle"}
-          </h2>
+          <h2 className="text-2xl font-bold text-white">Yeni Kişi Ekle</h2>
         </div>
-        <p className="text-muted-foreground">
-          {isSelfAdd 
-            ? "Ağınızın merkezi olacak kişi olarak kendinizi ekleyin" 
-            : "Ağınıza yeni bir bağlantı ekleyin"
-          }
-        </p>
+        <p className="text-muted-foreground">Ağınıza yeni bir bağlantı ekleyin</p>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -382,43 +343,39 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
           </div>
           
           <div className="grid gap-4 md:grid-cols-2">
-            {!isSelfAdd && (
-              <>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Şehir / Lokasyon
-                  </Label>
-                  <Input 
-                    {...form.register("city")} 
-                    placeholder="İl / İlçe" 
-                    className="hover-scale"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4" />
-                    Meslek
-                  </Label>
-                  <Input 
-                    {...form.register("profession")} 
-                    placeholder="Örn: Avukat, Tasarımcı" 
-                    className="hover-scale"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Telefon
-                  </Label>
-                  <Input 
-                    {...form.register("phone")} 
-                    placeholder="05xx xxx xx xx" 
-                    className="hover-scale"
-                  />
-                </div>
-              </>
-            )}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Şehir / Lokasyon
+              </Label>
+              <Input 
+                {...form.register("city")} 
+                placeholder="İl / İlçe" 
+                className="hover-scale"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Meslek
+              </Label>
+              <Input 
+                {...form.register("profession")} 
+                placeholder="Örn: Avukat, Tasarımcı" 
+                className="hover-scale"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Phone className="h-4 w-4" />
+                Telefon
+              </Label>
+              <Input 
+                {...form.register("phone")} 
+                placeholder="05xx xxx xx xx" 
+                className="hover-scale"
+              />
+            </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
@@ -435,97 +392,91 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
         </Card>
 
         {/* Relationship Card */}
-        {!isSelfAdd && (
-          <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.2s'}}>
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="h-5 w-5 text-white" />
-              <h3 className="font-semibold">Yakınlık Seviyesi</h3>
+        <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.2s'}}>
+          <div className="flex items-center gap-2 mb-4">
+            <Heart className="h-5 w-5 text-white" />
+            <h3 className="font-semibold">Yakınlık Seviyesi</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Yakınlık (0-10): {rel}</Label>
+              <span 
+                className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs"
+                style={{ 
+                  backgroundColor: relationshipColor + '20', 
+                  color: relationshipColor,
+                  borderColor: relationshipColor
+                }}
+              >
+                {rel >= 8 ? "Çok Yakın" : rel >= 5 ? "Orta" : "Uzak"}
+              </span>
             </div>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Yakınlık (0-10): {rel}</Label>
-                <span 
-                  className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs"
-                  style={{ 
-                    backgroundColor: relationshipColor + '20', 
-                    color: relationshipColor,
-                    borderColor: relationshipColor
-                  }}
-                >
-                  {rel >= 8 ? "Çok Yakın" : rel >= 5 ? "Orta" : "Uzak"}
-                </span>
-              </div>
-              <Slider 
-                min={0} 
-                max={10} 
-                step={1} 
-                value={[rel || 5]} 
-                onValueChange={(v) => form.setValue("relationship_degree", v[0] ?? 5)}
-                className="hover-scale"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Uzak</span>
-                <span>Orta</span>
-                <span>Çok Yakın</span>
-              </div>
+            <Slider 
+              min={0} 
+              max={10} 
+              step={1} 
+              value={[rel || 5]} 
+              onValueChange={(v) => form.setValue("relationship_degree", v[0] ?? 5)}
+              className="hover-scale"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Uzak</span>
+              <span>Orta</span>
+              <span>Çok Yakın</span>
             </div>
-          </Card>
-        )}
+          </div>
+        </Card>
 
         {/* Services & Tags Card */}
-        {!isSelfAdd && (
-          <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.3s'}}>
-            <div className="flex items-center gap-2 mb-4">
-              <Tag className="h-5 w-5 text-white" />
-              <h3 className="font-semibold">Hizmetler ve Özellikler</h3>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  Verebileceği Hizmetler (virgülle ayırın)
-                </Label>
-                <Input 
-                  {...form.register("services")} 
-                  placeholder="tasarım, yazılım, pazarlama" 
-                  className="hover-scale"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  Özellikler / Etiketler (virgülle ayırın)
-                </Label>
-                <Input 
-                  {...form.register("tags")} 
-                  placeholder="girişimci, yatırımcı, mentor" 
-                  className="hover-scale"
-                />
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Description Card */}
-        {!isSelfAdd && (
-          <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.4s'}}>
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-white" />
-              <h3 className="font-semibold">Açıklama</h3>
-            </div>
-            
+        <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.3s'}}>
+          <div className="flex items-center gap-2 mb-4">
+            <Tag className="h-5 w-5 text-white" />
+            <h3 className="font-semibold">Hizmetler ve Özellikler</h3>
+          </div>
+          
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Açıklama</Label>
-              <Textarea 
-                {...form.register("description")} 
-                placeholder="Kısa açıklama" 
-                className="hover-scale min-h-[100px]"
+              <Label className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
+                Verebileceği Hizmetler (virgülle ayırın)
+              </Label>
+              <Input 
+                {...form.register("services")} 
+                placeholder="tasarım, yazılım, pazarlama" 
+                className="hover-scale"
               />
             </div>
-          </Card>
-        )}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Özellikler / Etiketler (virgülle ayırın)
+              </Label>
+              <Input 
+                {...form.register("tags")} 
+                placeholder="girişimci, yatırımcı, mentor" 
+                className="hover-scale"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Description Card */}
+        <Card className="modern-card p-6 space-y-4 slide-in" style={{animationDelay: '0.4s'}}>
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5 text-white" />
+            <h3 className="font-semibold">Açıklama</h3>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Açıklama</Label>
+            <Textarea 
+              {...form.register("description")} 
+              placeholder="Kısa açıklama" 
+              className="hover-scale min-h-[100px]"
+            />
+          </div>
+        </Card>
 
         {/* Notification Email Toggle */}
         <Card className="modern-card p-4 space-y-3 slide-in" style={{animationDelay: '0.5s'}}>
@@ -556,7 +507,7 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
             ) : (
               <>
                 <UserPlus className="h-5 w-5 mr-2" />
-                {isSelfAdd ? "Kendimi Kaydet" : "Kişiyi Kaydet"}
+                Kişiyi Kaydet
               </>
             )}
           </Button>

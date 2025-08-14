@@ -53,7 +53,7 @@ const [lookup, setLookup] = useState<InviteLookupResponse | null>(null);
     setSEO(
       "Davet ile Kişi Ekle | Networking GPT",
       "Davet bağlantısıyla kişiyi ağınıza ekleyin.",
-      `${baseUrl}/invite-link/${token || ""}`
+      `${baseUrl}/invite/${token || ""}`
     );
   }, [baseUrl, token]);
 
