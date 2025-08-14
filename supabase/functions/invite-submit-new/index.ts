@@ -102,7 +102,7 @@ serve(async (req: Request) => {
       });
     }
 
-    const { token, contact, sendEmail, base_url } = body;
+    const { token, contact, sendEmail: shouldSendEmailFlag, base_url } = body;
 
     // Zorunlu alanlar
     if (!token) {
@@ -222,7 +222,7 @@ serve(async (req: Request) => {
     }
 
     // E-posta gönderim kontrolü
-    const shouldSendEmail = sendEmail && contact.email && inviteData && 
+    const shouldSendEmail = shouldSendEmailFlag && contact.email && inviteData && 
       ((result.remaining_uses !== null && result.remaining_uses >= 0) || result.chain_status === "active");
 
     // Opsiyonel e‑posta (takip daveti)
