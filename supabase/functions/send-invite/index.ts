@@ -64,80 +64,120 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   const fromEmail = Deno.env.get('FROM_EMAIL') || 'eda@rooktech.ai';
 
   if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    console.error('SMTP configuration missing:', {
+      host: !!smtpHost,
+      port: !!smtpPort,
+      user: !!smtpUser,
+      pass: !!smtpPass
+    });
     throw new Error('SMTP configuration not complete');
   }
 
   console.log(`Sending email via SMTP to: ${to}`);
   console.log(`Subject: ${subject}`);
   console.log(`From: ${fromEmail}`);
+  console.log(`SMTP Host: ${smtpHost}:${smtpPort}`);
 
-  // Create SMTP connection
   const port = parseInt(smtpPort);
   const secure = smtpSecure === 'true';
-  
+
   try {
-    // Create email message
-    const boundary = `----formdata-${Date.now()}`;
-    const emailMessage = [
-      `From: Network GPT <${fromEmail}>`,
+    // SMTP Implementation using native TCP connection
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    // Connect to SMTP server
+    const conn = await Deno.connect({
+      hostname: smtpHost,
+      port: port,
+    });
+
+    console.log(`Connected to SMTP server: ${smtpHost}:${port}`);
+
+    const writer = conn.writable.getWriter();
+    const reader = conn.readable.getReader();
+
+    // Helper function to send SMTP command
+    const sendCommand = async (command: string) => {
+      console.log(`> ${command}`);
+      await writer.write(encoder.encode(command + '\r\n'));
+    };
+
+    // Helper function to read SMTP response
+    const readResponse = async () => {
+      const { value } = await reader.read();
+      const response = decoder.decode(value);
+      console.log(`< ${response.trim()}`);
+      return response;
+    };
+
+    // SMTP conversation
+    await readResponse(); // Welcome message
+
+    // HELO
+    await sendCommand(`HELO ${smtpHost}`);
+    await readResponse();
+
+    // AUTH LOGIN
+    await sendCommand('AUTH LOGIN');
+    await readResponse();
+
+    // Username (base64 encoded)
+    const usernameB64 = btoa(smtpUser);
+    await sendCommand(usernameB64);
+    await readResponse();
+
+    // Password (base64 encoded)
+    const passwordB64 = btoa(smtpPass);
+    await sendCommand(passwordB64);
+    await readResponse();
+
+    // MAIL FROM
+    await sendCommand(`MAIL FROM:<${fromEmail}>`);
+    await readResponse();
+
+    // RCPT TO
+    await sendCommand(`RCPT TO:<${to}>`);
+    await readResponse();
+
+    // DATA
+    await sendCommand('DATA');
+    await readResponse();
+
+    // Email content
+    const emailContent = [
+      `From: NetworkGPT <${fromEmail}>`,
       `To: ${to}`,
       `Subject: ${subject}`,
       `MIME-Version: 1.0`,
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      '',
-      `--${boundary}`,
       `Content-Type: text/html; charset=UTF-8`,
-      `Content-Transfer-Encoding: 7bit`,
       '',
       html,
-      '',
-      `--${boundary}--`,
+      '.',
       ''
     ].join('\r\n');
 
-    // Simple SMTP implementation using fetch to a proxy service
-    // Since Deno doesn't have built-in SMTP, we'll use a simple approach
-    const response = await fetch(`https://api.emailjs.com/api/v1.0/email/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        service_id: 'default_service',
-        template_id: 'template_custom',
-        user_id: 'user_custom',
-        template_params: {
-          to_email: to,
-          from_email: fromEmail,
-          from_name: 'Network GPT',
-          subject: subject,
-          html_message: html
-        },
-        smtp: {
-          host: smtpHost,
-          port: port,
-          secure: secure,
-          user: smtpUser,
-          pass: smtpPass
-        }
-      }),
-    });
+    await writer.write(encoder.encode(emailContent));
+    await readResponse();
 
-    if (!response.ok) {
-      console.error('SMTP sending failed, falling back to simple notification');
-      // Fallback: just log success since SMTP setup might need more configuration
-      console.log(`Email would be sent to: ${to} from: ${fromEmail}`);
-      return { success: true, id: `smtp_${Date.now()}`, method: 'logged' };
-    }
+    // QUIT
+    await sendCommand('QUIT');
+    await readResponse();
+
+    // Close connection
+    await writer.close();
+    await reader.cancel();
+    conn.close();
 
     console.log(`Email sent successfully via SMTP to: ${to}`);
     return { success: true, id: `smtp_${Date.now()}`, method: 'smtp' };
 
   } catch (error: any) {
     console.error('SMTP error:', error.message);
-    // Fallback: just log the attempt
-    console.log(`Email attempt logged for: ${to} from: ${fromEmail}`);
-    return { success: true, id: `logged_${Date.now()}`, method: 'logged' };
+    console.error('SMTP stack:', error.stack);
+    
+    // Return error instead of falling back
+    throw new Error(`SMTP Error: ${error.message}`);
   }
 };
 
