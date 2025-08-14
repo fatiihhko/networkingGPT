@@ -90,7 +90,7 @@ export const NetworkFlow = () => {
     return { contactMap, rootContacts };
   }, [contacts]);
 
-  // Layout algorithm that positions contacts close to their inviter
+  // Layout algorithm that positions contacts close to their inviter with no overlaps
   const calculatePositions = (contacts: Contact[], containerWidth: number = 800, containerHeight: number = 560) => {
     const positions = new Map<string, { x: number; y: number }>();
     
@@ -116,11 +116,12 @@ export const NetworkFlow = () => {
       }
     });
 
-    // Spacing constants
-    const baseRadius = Math.min(containerWidth, containerHeight) * 0.3;
-    const childRadius = 120; // Distance from parent for invited contacts
-    const minNodeSpacing = 100;
-    const padding = 120;
+    // Spacing constants - increased for better separation
+    const baseRadius = Math.min(containerWidth, containerHeight) * 0.35;
+    const childRadius = 150; // Distance from parent for invited contacts
+    const minNodeSpacing = 160; // Minimum distance between any two nodes
+    const nodeSize = 140; // Approximate node size including padding
+    const padding = 140;
 
     // First, position manually added contacts around Rook Tech
     if (manuallyAdded.length > 0) {
@@ -138,34 +139,38 @@ export const NetworkFlow = () => {
       });
     }
 
-    // Then, position each contact's invited contacts around them
+    // Enhanced collision detection for positioning children around parent
     const positionChildrenAroundParent = (parentId: string, children: Contact[]) => {
       const parentPos = positions.get(parentId);
       if (!parentPos || children.length === 0) return;
 
+      // Calculate adaptive radius based on number of children
+      const adaptiveRadius = childRadius + Math.max(0, (children.length - 3) * 20);
       const angleStep = (2 * Math.PI) / children.length;
       
       children.forEach((child, index) => {
         let positioned = false;
         let attempts = 0;
-        const maxAttempts = 10;
+        const maxAttempts = 20; // Increased attempts
         
         while (!positioned && attempts < maxAttempts) {
-          const angle = index * angleStep + (attempts * 0.3);
-          const distance = childRadius + (attempts * 20);
+          // Calculate position with progressive distance increase
+          const angle = index * angleStep + (attempts * 0.2);
+          const distance = adaptiveRadius + (attempts * 30);
           
           let x = parentPos.x + distance * Math.cos(angle);
           let y = parentPos.y + distance * Math.sin(angle);
           
-          // Ensure within bounds
+          // Ensure within bounds with larger padding
           x = Math.max(padding, Math.min(containerWidth - padding, x));
           y = Math.max(padding, Math.min(containerHeight - padding, y));
           
-          // Check for collisions
+          // Comprehensive collision detection
           let hasCollision = false;
           for (const [existingId, existingPos] of positions) {
             const dist = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
-            if (dist < minNodeSpacing) {
+            // Use node size + minimum spacing for more accurate collision detection
+            if (dist < (minNodeSpacing + nodeSize / 2)) {
               hasCollision = true;
               break;
             }
@@ -185,22 +190,62 @@ export const NetworkFlow = () => {
           attempts++;
         }
         
-        // Fallback if positioning failed
+        // Enhanced fallback positioning with spiral pattern
         if (!positioned) {
-          const fallbackAngle = index * angleStep;
-          const fallbackDistance = childRadius + (attempts * 30);
-          let x = parentPos.x + fallbackDistance * Math.cos(fallbackAngle);
-          let y = parentPos.y + fallbackDistance * Math.sin(fallbackAngle);
+          let spiralAttempt = 0;
+          const maxSpiralAttempts = 30;
           
-          x = Math.max(padding, Math.min(containerWidth - padding, x));
-          y = Math.max(padding, Math.min(containerHeight - padding, y));
+          while (!positioned && spiralAttempt < maxSpiralAttempts) {
+            const spiralAngle = (index * angleStep) + (spiralAttempt * 0.5);
+            const spiralDistance = adaptiveRadius + (spiralAttempt * 25);
+            
+            let x = parentPos.x + spiralDistance * Math.cos(spiralAngle);
+            let y = parentPos.y + spiralDistance * Math.sin(spiralAngle);
+            
+            x = Math.max(padding, Math.min(containerWidth - padding, x));
+            y = Math.max(padding, Math.min(containerHeight - padding, y));
+            
+            // Check collision again
+            let hasCollision = false;
+            for (const [existingId, existingPos] of positions) {
+              const dist = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
+              if (dist < (minNodeSpacing + nodeSize / 2)) {
+                hasCollision = true;
+                break;
+              }
+            }
+            
+            if (!hasCollision) {
+              positions.set(child.id, { x, y });
+              positioned = true;
+              
+              // Position grandchildren
+              const grandChildren = contactsByParent.get(child.id) || [];
+              if (grandChildren.length > 0) {
+                positionChildrenAroundParent(child.id, grandChildren);
+              }
+            }
+            
+            spiralAttempt++;
+          }
           
-          positions.set(child.id, { x, y });
-          
-          // Still try to position grandchildren
-          const grandChildren = contactsByParent.get(child.id) || [];
-          if (grandChildren.length > 0) {
-            positionChildrenAroundParent(child.id, grandChildren);
+          // Ultimate fallback - force position at safe distance
+          if (!positioned) {
+            const safeAngle = index * angleStep;
+            const safeDistance = adaptiveRadius + maxAttempts * 40;
+            let x = parentPos.x + safeDistance * Math.cos(safeAngle);
+            let y = parentPos.y + safeDistance * Math.sin(safeAngle);
+            
+            x = Math.max(padding, Math.min(containerWidth - padding, x));
+            y = Math.max(padding, Math.min(containerHeight - padding, y));
+            
+            positions.set(child.id, { x, y });
+            
+            // Still try to position grandchildren
+            const grandChildren = contactsByParent.get(child.id) || [];
+            if (grandChildren.length > 0) {
+              positionChildrenAroundParent(child.id, grandChildren);
+            }
           }
         }
       });
