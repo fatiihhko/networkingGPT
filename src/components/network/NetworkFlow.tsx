@@ -90,13 +90,16 @@ export const NetworkFlow = () => {
     return { contactMap, rootContacts };
   }, [contacts]);
 
-  // Advanced layout algorithm for modern network visualization
+  // Advanced layout algorithm with dynamic spacing for professional network visualization
   const calculatePositions = (contacts: Contact[], containerWidth: number = 800, containerHeight: number = 560) => {
     const positions = new Map<string, { x: number; y: number }>();
     
     // Responsive center calculations
     const centerX = containerWidth / 2;
     const centerY = containerHeight / 2;
+    
+    // Always position Rook Tech at the center
+    positions.set("rook-tech", { x: centerX, y: centerY });
     
     // Group contacts by hierarchy level
     const levelGroups = new Map<number, Contact[]>();
@@ -109,46 +112,107 @@ export const NetworkFlow = () => {
       levelGroups.get(level)!.push(contact);
     });
 
-    // Dynamic spacing based on screen size and node count
-    const baseRadius = Math.min(containerWidth, containerHeight) * 0.3;
-    const levelIncrement = Math.min(containerWidth, containerHeight) * 0.15;
-    const minNodeSpacing = 120; // Minimum distance between nodes
+    // Dramatically increased spacing for professional appearance
+    const baseRadius = Math.min(containerWidth, containerHeight) * 0.25; // Increased from 0.3
+    const levelIncrement = Math.max(180, Math.min(containerWidth, containerHeight) * 0.25); // Much larger spacing
+    const minNodeSpacing = Math.max(200, containerWidth * 0.15); // Minimum 200px or 15% of container width
+    const maxAttempts = 20;
 
-    // Position nodes in concentric circles with even distribution
+    // Enhanced circular layout with collision avoidance
     levelGroups.forEach((levelContacts, level) => {
       const radius = baseRadius + (level - 1) * levelIncrement;
-      const angleStep = (2 * Math.PI) / Math.max(levelContacts.length, 1);
+      const contactCount = levelContacts.length;
       
-      levelContacts.forEach((contact, index) => {
-        const angle = index * angleStep;
+      if (contactCount === 1) {
+        // Single node: place directly on circle
+        const angle = Math.PI / 4; // 45 degrees for visual balance
         let x = centerX + radius * Math.cos(angle);
         let y = centerY + radius * Math.sin(angle);
         
-        // Ensure nodes stay within bounds with padding
-        const padding = 80;
+        // Ensure within bounds
+        const padding = 120;
         x = Math.max(padding, Math.min(containerWidth - padding, x));
         y = Math.max(padding, Math.min(containerHeight - padding, y));
         
-        // Anti-collision system: check for overlaps and adjust
-        let overlapping = true;
+        positions.set(levelContacts[0].id, { x, y });
+        return;
+      }
+
+      // Multiple nodes: distribute evenly around circle with extra spacing
+      const angleStep = (2 * Math.PI) / contactCount;
+      const spacingMultiplier = Math.max(1.5, 3 - contactCount * 0.1); // Increase spacing for fewer nodes
+      
+      levelContacts.forEach((contact, index) => {
         let attempts = 0;
-        while (overlapping && attempts < 10) {
-          overlapping = false;
+        let positioned = false;
+        
+        while (!positioned && attempts < maxAttempts) {
+          // Calculate base position with spacing multiplier
+          const baseAngle = index * angleStep * spacingMultiplier;
+          const spreadRadius = radius + (attempts * 30); // Increase radius if collisions
+          
+          let x = centerX + spreadRadius * Math.cos(baseAngle);
+          let y = centerY + spreadRadius * Math.sin(baseAngle);
+          
+          // Ensure nodes stay within bounds with generous padding
+          const padding = 140;
+          x = Math.max(padding, Math.min(containerWidth - padding, x));
+          y = Math.max(padding, Math.min(containerHeight - padding, y));
+          
+          // Advanced collision detection with larger spacing
+          let hasCollision = false;
           for (const [existingId, existingPos] of positions) {
             const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
             if (distance < minNodeSpacing) {
-              // Adjust position to avoid overlap
-              const adjustAngle = angle + (attempts * 0.3);
-              x = centerX + (radius + attempts * 20) * Math.cos(adjustAngle);
-              y = centerY + (radius + attempts * 20) * Math.sin(adjustAngle);
-              overlapping = true;
+              hasCollision = true;
               break;
             }
           }
+          
+          if (!hasCollision) {
+            positions.set(contact.id, { x, y });
+            positioned = true;
+          } else {
+            // Try alternative positions with increased radius and angle offset
+            const offsetAngle = baseAngle + (attempts * 0.5);
+            x = centerX + (spreadRadius + attempts * 40) * Math.cos(offsetAngle);
+            y = centerY + (spreadRadius + attempts * 40) * Math.sin(offsetAngle);
+            
+            x = Math.max(padding, Math.min(containerWidth - padding, x));
+            y = Math.max(padding, Math.min(containerHeight - padding, y));
+            
+            // Check collision again
+            hasCollision = false;
+            for (const [existingId, existingPos] of positions) {
+              const distance = Math.sqrt(Math.pow(x - existingPos.x, 2) + Math.pow(y - existingPos.y, 2));
+              if (distance < minNodeSpacing) {
+                hasCollision = true;
+                break;
+              }
+            }
+            
+            if (!hasCollision) {
+              positions.set(contact.id, { x, y });
+              positioned = true;
+            }
+          }
+          
           attempts++;
         }
         
-        positions.set(contact.id, { x, y });
+        // Fallback: force position if all attempts failed
+        if (!positioned) {
+          const fallbackAngle = index * angleStep + (Math.PI / 4);
+          const fallbackRadius = radius + (attempts * 50);
+          let x = centerX + fallbackRadius * Math.cos(fallbackAngle);
+          let y = centerY + fallbackRadius * Math.sin(fallbackAngle);
+          
+          const padding = 140;
+          x = Math.max(padding, Math.min(containerWidth - padding, x));
+          y = Math.max(padding, Math.min(containerHeight - padding, y));
+          
+          positions.set(contact.id, { x, y });
+        }
       });
     });
 
@@ -156,9 +220,9 @@ export const NetworkFlow = () => {
   };
 
   const positions = useMemo(() => {
-    // Use responsive dimensions for better mobile experience
-    const containerWidth = window.innerWidth < 768 ? 500 : 800;
-    const containerHeight = window.innerWidth < 768 ? 400 : 560;
+    // Dynamic container sizing for optimal spacing
+    const containerWidth = Math.max(1000, window.innerWidth < 768 ? 800 : 1200);
+    const containerHeight = Math.max(800, window.innerWidth < 768 ? 600 : 900);
     return calculatePositions(contacts, containerWidth, containerHeight);
   }, [contacts, networkStructure]);
 
@@ -182,17 +246,17 @@ export const NetworkFlow = () => {
           contact: null,
           isRoot: true
         },
-        position: { x: 400, y: 280 },
+        position: { x: positions.get("rook-tech")?.x || 600, y: positions.get("rook-tech")?.y || 450 },
         style: { 
-          background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.95))", 
+          background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.98))", 
           color: "hsl(var(--card-foreground))", 
-          borderRadius: "20px", 
+          borderRadius: "24px", 
           padding: "0",
-          border: "2px solid hsl(var(--primary) / 0.3)",
-          boxShadow: "0 8px 32px hsl(var(--primary) / 0.15), 0 4px 16px hsl(var(--shadow) / 0.1)",
-          minWidth: "120px",
-          minHeight: "120px",
-          backdropFilter: "blur(10px)"
+          border: "3px solid hsl(var(--primary) / 0.4)",
+          boxShadow: "0 12px 40px hsl(var(--primary) / 0.2), 0 6px 20px hsl(var(--shadow) / 0.15)",
+          minWidth: "140px",
+          minHeight: "140px",
+          backdropFilter: "blur(12px)"
         },
       });
 
@@ -210,14 +274,14 @@ export const NetworkFlow = () => {
        const nodeStyle = {
          padding: "0",
          color: 'hsl(var(--card-foreground))',
-         background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.95))",
-         borderRadius: "16px",
+         background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--card) / 0.98))",
+         borderRadius: "20px",
          border: `2px solid ${relationshipColor}`,
-         boxShadow: `0 6px 20px ${relationshipColor}20, 0 2px 8px hsl(var(--shadow) / 0.1)`,
-         minWidth: "100px",
-         minHeight: "100px",
+         boxShadow: `0 8px 28px ${relationshipColor}25, 0 4px 12px hsl(var(--shadow) / 0.12)`,
+         minWidth: "120px",
+         minHeight: "120px",
          cursor: "pointer",
-         backdropFilter: "blur(8px)"
+         backdropFilter: "blur(10px)"
        };
 
       nodeElements.push({
@@ -227,19 +291,19 @@ export const NetworkFlow = () => {
            label: (
              <Tooltip>
                <TooltipTrigger asChild>
-                 <div className="flex flex-col items-center text-center p-3">
-                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center mb-2 shadow-sm">
+                 <div className="flex flex-col items-center text-center p-4">
+                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-muted to-muted/80 flex items-center justify-center mb-3 shadow-sm border border-border/20">
                      {hasChildren ? (
-                       <Users className="h-4 w-4 text-primary" />
+                       <Users className="h-5 w-5 text-primary" />
                      ) : (
-                       <UserCheck className="h-4 w-4 text-muted-foreground" />
+                       <UserCheck className="h-5 w-5 text-muted-foreground" />
                      )}
                    </div>
-                   <div className="font-semibold text-xs text-card-foreground mb-1 leading-tight">
+                   <div className="font-semibold text-sm text-card-foreground mb-1 leading-tight text-center max-w-[100px]">
                      {contact.first_name} {contact.last_name}
                    </div>
                    {contact.profession && (
-                     <div className="text-xs text-muted-foreground truncate max-w-[80px]">
+                     <div className="text-xs text-muted-foreground text-center max-w-[100px] truncate">
                        {contact.profession}
                      </div>
                    )}
@@ -302,11 +366,11 @@ export const NetworkFlow = () => {
             animated: contact.relationship_degree >= 8,
             style: { 
               stroke: relationshipColor,
-              strokeWidth: contact.relationship_degree >= 8 ? 2.5 : 1.5,
-              opacity: 0.7,
-              strokeDasharray: contact.relationship_degree >= 8 ? "0" : "5,5"
+              strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
+              opacity: 0.6,
+              strokeDasharray: contact.relationship_degree >= 8 ? "0" : "8,4"
             },
-            type: "bezier"
+            type: "smoothstep"
           });
         } else {
           // Parent not found, connect to Rook Tech
@@ -317,11 +381,11 @@ export const NetworkFlow = () => {
             animated: contact.relationship_degree >= 8,
             style: { 
               stroke: relationshipColor,
-              strokeWidth: contact.relationship_degree >= 8 ? 2.5 : 1.5,
-              opacity: 0.7,
-              strokeDasharray: contact.relationship_degree >= 8 ? "0" : "5,5"
+              strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
+              opacity: 0.6,
+              strokeDasharray: contact.relationship_degree >= 8 ? "0" : "8,4"
             },
-            type: "bezier"
+            type: "smoothstep"
           });
         }
       } else {
@@ -333,11 +397,11 @@ export const NetworkFlow = () => {
           animated: contact.relationship_degree >= 8,
           style: { 
             stroke: relationshipColor,
-            strokeWidth: contact.relationship_degree >= 8 ? 2.5 : 1.5,
-            opacity: 0.7,
-            strokeDasharray: contact.relationship_degree >= 8 ? "0" : "5,5"
+            strokeWidth: contact.relationship_degree >= 8 ? 3 : 2,
+            opacity: 0.6,
+            strokeDasharray: contact.relationship_degree >= 8 ? "0" : "8,4"
           },
-          type: "bezier"
+          type: "smoothstep"
         });
       }
     });
@@ -370,9 +434,9 @@ export const NetworkFlow = () => {
         <StatsBar />
       </Card>
       
-      <div className="w-full h-[420px] md:h-[560px] lg:h-[700px] relative bg-gradient-to-br from-background via-background to-muted/20 rounded-xl overflow-hidden border border-border/50">
+      <div className="w-full h-[500px] md:h-[700px] lg:h-[900px] relative bg-gradient-to-br from-background via-background to-muted/20 rounded-xl overflow-hidden border border-border/50">
       {/* Modern Network Legend */}
-       <div className="absolute top-4 left-4 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg">
+       <div className="absolute top-6 left-6 z-10 bg-card/95 backdrop-blur-lg border border-border/50 rounded-xl p-4 text-xs shadow-lg">
          <div className="font-semibold mb-3 text-card-foreground">Ağ Haritası</div>
          <div className="space-y-2">
            <div className="flex items-center gap-2">
@@ -410,13 +474,16 @@ export const NetworkFlow = () => {
           onNodeClick={handleNodeClick}
           fitView
           className="w-full h-full"
-          fitViewOptions={{ padding: 0.15, includeHiddenNodes: false }}
+          fitViewOptions={{ padding: 0.2, includeHiddenNodes: false, minZoom: 0.1, maxZoom: 1.5 }}
           nodesDraggable={true}
           nodesConnectable={false}
           elementsSelectable={true}
-          minZoom={0.3}
-          maxZoom={2}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+          minZoom={0.1}
+          maxZoom={1.5}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.4 }}
+          preventScrolling={false}
+          panOnDrag={true}
+          zoomOnDoubleClick={false}
         >
           <MiniMap 
             style={{ 
