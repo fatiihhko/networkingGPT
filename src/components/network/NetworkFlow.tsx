@@ -144,9 +144,19 @@ export const NetworkFlow = () => {
       const parentPos = positions.get(parentId);
       if (!parentPos || children.length === 0) return;
 
+      // Determine parent's direction from center
+      const directionX = parentPos.x - centerX;
+      const directionY = parentPos.y - centerY;
+      const parentAngle = Math.atan2(directionY, directionX);
+      
       // Calculate adaptive radius based on number of children
-      const adaptiveRadius = childRadius + Math.max(0, (children.length - 3) * 20);
-      const angleStep = (2 * Math.PI) / children.length;
+      const adaptiveRadius = childRadius + Math.max(0, (children.length - 3) * 15);
+      
+      // Position children in the same direction as parent relative to center
+      const baseAngle = parentAngle; // Start from parent's direction
+      const angleSpread = Math.PI / 3; // 60 degrees spread
+      const angleStep = children.length > 1 ? angleSpread / (children.length - 1) : 0;
+      const startAngle = baseAngle - angleSpread / 2;
       
       children.forEach((child, index) => {
         let positioned = false;
@@ -154,9 +164,9 @@ export const NetworkFlow = () => {
         const maxAttempts = 20; // Increased attempts
         
         while (!positioned && attempts < maxAttempts) {
-          // Calculate position with progressive distance increase
-          const angle = index * angleStep + (attempts * 0.2);
-          const distance = adaptiveRadius + (attempts * 30);
+          // Calculate position based on parent's direction from center
+          const angle = startAngle + (index * angleStep) + (attempts * 0.1);
+          const distance = adaptiveRadius + (attempts * 20);
           
           let x = parentPos.x + distance * Math.cos(angle);
           let y = parentPos.y + distance * Math.sin(angle);
@@ -196,7 +206,7 @@ export const NetworkFlow = () => {
           const maxSpiralAttempts = 30;
           
           while (!positioned && spiralAttempt < maxSpiralAttempts) {
-            const spiralAngle = (index * angleStep) + (spiralAttempt * 0.5);
+            const spiralAngle = startAngle + (index * angleStep) + (spiralAttempt * 0.3);
             const spiralDistance = adaptiveRadius + (spiralAttempt * 25);
             
             let x = parentPos.x + spiralDistance * Math.cos(spiralAngle);
