@@ -30,20 +30,47 @@ export const InviteLinkLanding = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from("invite_links")
-        .select("*")
-        .eq("token", token)
-        .eq("status", "active")
-        .single();
+      // Use invite-lookup function to check token validity
+      const { data, error } = await supabase.functions.invoke("invite-lookup", {
+        body: { token }
+      });
 
-      if (error || !data) {
+      if (error || !data || !data.valid) {
         setError("Davet bağlantısı bulunamadı veya devre dışı");
         setLoading(false);
         return;
       }
 
-      setLinkInfo(data);
+      // Get invite details from invites table
+      const { data: inviteData, error: inviteError } = await supabase
+        .from("invites")
+        .select(`
+          id,
+          token,
+          max_uses,
+          uses_count,
+          status,
+          invite_chains!inner(max_uses, remaining_uses, status)
+        `)
+        .eq("token", token)
+        .single();
+
+      if (inviteError || !inviteData) {
+        setError("Davet bağlantısı bulunamadı veya devre dışı");
+        setLoading(false);
+        return;
+      }
+
+      const chain = inviteData.invite_chains;
+      const linkInfo = {
+        id: inviteData.id,
+        name: "Davet Bağlantısı",
+        limit_count: chain.max_uses || 0,
+        used_count: (chain.max_uses || 0) - (chain.remaining_uses || 0),
+        status: chain.status
+      };
+
+      setLinkInfo(linkInfo);
     } catch (err) {
       setError("Davet bağlantısı yüklenirken hata oluştu");
     } finally {
@@ -56,7 +83,7 @@ export const InviteLinkLanding = () => {
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invite-link-submit", {
+      const { data, error } = await supabase.functions.invoke("invite-submit", {
         body: {
           token,
           contact: contactData,
