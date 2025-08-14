@@ -199,8 +199,8 @@ const Network = () => {
                   {activeTab === "add" && <div className="menu-card-indicator" />}
                 </div>
                 <div className="menu-card-body">
-                  <h3 className="menu-card-title">Kişi Ekle</h3>
-                  <p className="menu-card-description">Yeni bağlantılar kurun</p>
+                  <h3 className="menu-card-title text-white">Kişi Ekle</h3>
+                  <p className="menu-card-description text-white">Yeni bağlantılar kurun</p>
                 </div>
               </div>
             </div>
@@ -250,8 +250,8 @@ const Network = () => {
                   {activeTab === "ai" && <div className="menu-card-indicator" />}
                 </div>
                 <div className="menu-card-body">
-                  <h3 className="menu-card-title">AI Asistan</h3>
-                  <p className="menu-card-description">Akıllı ağ analizi</p>
+                  <h3 className="menu-card-title text-white">AI Asistan</h3>
+                  <p className="menu-card-description text-white">Akıllı ağ analizi</p>
                 </div>
               </div>
             </div>
@@ -304,8 +304,8 @@ const Network = () => {
                   : "text-muted-foreground hover:text-foreground"
               } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
             >
-              <UserPlus className="h-5 w-5" />
-              <span className="text-xs">Kişi Ekle</span>
+              <UserPlus className="h-5 w-5 text-white" />
+              <span className="text-xs text-white">Kişi Ekle</span>
             </button>
             <button
               type="button"

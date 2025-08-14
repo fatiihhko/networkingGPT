@@ -95,8 +95,8 @@ export const AIAssistant = () => {
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
-          <Bot className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold gradient-text">Mehmet</h2>
+          <Bot className="h-6 w-6 text-white" />
+          <h2 className="text-2xl font-bold text-white">Mehmet</h2>
         </div>
         <p className="text-muted-foreground">Merhaba! Ben Mehmet, senin AI ekip kurma asistanın 👋</p>
       </div>

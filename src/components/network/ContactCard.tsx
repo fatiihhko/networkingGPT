@@ -36,7 +36,7 @@ export const ContactCard = memo(({ contact, index, degreeLevel, onDelete }: Cont
   >
     <div className="flex items-start justify-between gap-3 mb-4">
       <div className="flex-1">
-        <div className="text-xl font-bold gradient-text group-hover:scale-105 transition-transform">
+        <div className="text-xl font-bold text-white group-hover:scale-105 transition-transform">
           {contact.first_name} {contact.last_name}
         </div>
         {contact.profession && (

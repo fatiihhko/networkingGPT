@@ -295,8 +295,8 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
       {/* Header */}
       <div className="text-center space-y-2 fade-in">
         <div className="flex items-center justify-center gap-2">
-          <UserPlus className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-bold gradient-text">Yeni Kişi Ekle</h2>
+          <UserPlus className="h-6 w-6 text-white" />
+          <h2 className="text-2xl font-bold text-white">Yeni Kişi Ekle</h2>
         </div>
         <p className="text-muted-foreground">Ağınıza yeni bir bağlantı ekleyin</p>
       </div>
