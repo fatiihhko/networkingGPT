@@ -527,6 +527,19 @@ const onSubmit = async (values: z.infer<typeof schema>) => {
           </Card>
         )}
 
+        {/* Notification Email Toggle */}
+        <Card className="modern-card p-4 space-y-3 slide-in" style={{animationDelay: '0.5s'}}>
+          <div className="flex items-start gap-3">
+            <Checkbox id="sendEmail" checked={sendEmail} onCheckedChange={(v) => setSendEmail(Boolean(v))} />
+            <div className="space-y-1">
+              <Label htmlFor="sendEmail" className="cursor-pointer flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                Bu kişiye bilgilendirme maili gönder
+              </Label>
+              <p className="text-xs text-muted-foreground">E-posta alanı doluysa, bilgilendirme e-postası gönderilir.</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Submit Button */}
         <div className="flex justify-center pt-4 slide-in" style={{animationDelay: '0.6s'}}>
